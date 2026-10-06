@@ -360,7 +360,7 @@ chmod +x "$download_bin/wget"
   [ "$(download_text https://example.test/signature)" = signature ]
 )
 
-# A fresh bootstrap installs Git, clones the repo, then installs packages and links configs.
+# A fresh install adds Git, clones the repo, then installs packages and links configs.
 bootstrap_git_mock="$tmp_home/bootstrap-git"
 cat > "$bootstrap_git_mock" <<'GIT'
 #!/bin/sh
@@ -424,7 +424,7 @@ for package_manager in pacman apt-get; do
   setup_bootstrap_bin "$bootstrap_bin" "$package_manager"
   bootstrap_output=$(PATH="$bootstrap_bin" HOME="$bootstrap_home" \
     BOOTSTRAP_BIN="$bootstrap_bin" BOOTSTRAP_GIT_MOCK="$bootstrap_git_mock" \
-    BOOTSTRAP_MARKER="$bootstrap_home/result" "$repo_dir/scripts/bootstrap.sh")
+    BOOTSTRAP_MARKER="$bootstrap_home/result" "$repo_dir/scripts/install.sh")
   if [ "$package_manager" = pacman ]; then
     [ "$(sed -n '1p' "$bootstrap_home/result")" = install-git ]
     next_step=2
@@ -438,17 +438,17 @@ for package_manager in pacman apt-get; do
   [ "$(sed -n "$((next_step + 2))p" "$bootstrap_home/result")" = link ]
   case "$bootstrap_output" in
     *"$bootstrap_home/.dotfiles/scripts/restore.sh /path/to/backup.tar.gz"*) ;;
-    *) printf 'bootstrap did not suggest the restore command\n' >&2; exit 1 ;;
+    *) printf 'installer did not suggest the restore command\n' >&2; exit 1 ;;
   esac
   case "$bootstrap_output" in
     *"$bootstrap_home/.dotfiles/scripts/check-packages.sh"*) ;;
-    *) printf 'bootstrap did not suggest checking packages\n' >&2; exit 1 ;;
+    *) printf 'installer did not suggest checking packages\n' >&2; exit 1 ;;
   esac
 
   : > "$bootstrap_home/result"
   bootstrap_output=$(PATH="$bootstrap_bin" HOME="$bootstrap_home" \
     BOOTSTRAP_BIN="$bootstrap_bin" BOOTSTRAP_GIT_MOCK="$bootstrap_git_mock" \
-    BOOTSTRAP_MARKER="$bootstrap_home/result" "$repo_dir/scripts/bootstrap.sh")
+    BOOTSTRAP_MARKER="$bootstrap_home/result" "$repo_dir/scripts/install.sh")
   [ "$(sed -n '1p' "$bootstrap_home/result")" = pull ]
   [ "$(sed -n '2p' "$bootstrap_home/result")" = packages ]
   [ "$(sed -n '3p' "$bootstrap_home/result")" = link ]
@@ -459,8 +459,8 @@ mkdir -p "$conflict_home/.dotfiles"
 printf 'keep\n' > "$conflict_home/.dotfiles/sentinel"
 if PATH="$bootstrap_bin" HOME="$conflict_home" \
   BOOTSTRAP_BIN="$bootstrap_bin" BOOTSTRAP_GIT_MOCK="$bootstrap_git_mock" \
-  BOOTSTRAP_MARKER="$conflict_home/result" "$repo_dir/scripts/bootstrap.sh" >/dev/null 2>&1; then
-  printf 'bootstrap accepted a non-repository .dotfiles path\n' >&2
+  BOOTSTRAP_MARKER="$conflict_home/result" "$repo_dir/scripts/install.sh" >/dev/null 2>&1; then
+  printf 'installer accepted a non-repository .dotfiles path\n' >&2
   exit 1
 fi
 [ "$(cat "$conflict_home/.dotfiles/sentinel")" = keep ]

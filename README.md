@@ -5,13 +5,13 @@ Portable Linux shell and Git settings for Arch and Debian/Ubuntu.
 Fresh install with curl:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/zainphp/.dotfiles/main/scripts/bootstrap.sh | sh
+curl -fsSL https://raw.githubusercontent.com/zainphp/.dotfiles/main/scripts/install.sh | sh
 ```
 
 Or with wget:
 
 ```sh
-wget -qO- https://raw.githubusercontent.com/zainphp/.dotfiles/main/scripts/bootstrap.sh | sh
+wget -qO- https://raw.githubusercontent.com/zainphp/.dotfiles/main/scripts/install.sh | sh
 ```
 
 Check packages after installation:
@@ -20,7 +20,7 @@ Check packages after installation:
 "$HOME/.dotfiles/scripts/check-packages.sh"
 ```
 
-The bootstrap installs Git if needed, clones this repository or fast-forward updates an existing checkout, installs packages from the [Arch](packages/arch.txt) or [Debian/Ubuntu](packages/debian.txt) list, then replaces existing `~/.zshrc` and `~/.gitconfig` files with links into the repo. Package installation may prompt for `sudo`.
+The installer adds Git if needed, clones this repository or fast-forward updates an existing checkout, installs packages from the [Arch](packages/arch.txt) or [Debian/Ubuntu](packages/debian.txt) list, then replaces existing `~/.zshrc` and `~/.gitconfig` files with links into the repo. Package installation may prompt for `sudo`.
 
 The package installer installs Oh My Zsh and Bun, sets Zsh as the default login shell, then sets up PHPVM with its newest available PHP version before installing Composer. Open a new terminal session for the shell change to take effect. VS Code is preferred when `code` is available; otherwise the editor is Nano.
 

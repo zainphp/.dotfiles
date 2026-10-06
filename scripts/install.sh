@@ -25,7 +25,7 @@ if ! command -v git >/dev/null 2>&1; then
     as_root apt-get update
     as_root apt-get install --yes git
   else
-    printf 'Unsupported package manager; install Git, then rerun this bootstrap.\n' >&2
+    printf 'Unsupported package manager; install Git, then rerun this installer.\n' >&2
     exit 1
   fi
 fi
@@ -39,6 +39,6 @@ fi
 cd "$dotfiles_dir"
 ./scripts/install-packages.sh
 ./scripts/symlink-dotfiles.sh
-printf '\nBootstrap complete. Open a new terminal session to use Zsh. If you have a backup archive, restore it with:\n  %s/scripts/restore.sh /path/to/backup.tar.gz\n' \
+printf '\nInstallation complete. Open a new terminal session to use Zsh. If you have a backup archive, restore it with:\n  %s/scripts/restore.sh /path/to/backup.tar.gz\n' \
   "$dotfiles_dir"
 printf 'Check packages and binaries with:\n  %s/scripts/check-packages.sh\n' "$dotfiles_dir"
