@@ -57,3 +57,5 @@ Keep these out of Git. `./scripts/backup.sh` archives these locations; the archi
 Do not commit `.env` files, private keys, or login tokens. `scripts/backup.sh` excludes `~/.codex/auth.json`; sign in again with Codex and `gh auth login` after reinstalling.
 
 Run `./scripts/backup.sh` before reinstalling Linux. It saves projects, SSH keys, Zsh state, this dotfiles repo (including `.zshrc.local`), and Codex sessions and memories to `/mnt/c/Users/addam/Backups`. Pass another destination directory or set `DOTFILES_BACKUP_DIR` to change the destination; choose a location outside `~/projects` and this dotfiles repository. Close Codex first. The archive contains private keys, shell records, and project data; keep it private. Reinstallable Codex packages/plugins and `auth.json` are excluded.
+
+Restore the newest archive with `./scripts/restore.sh`; pass an archive path to choose a specific backup. The script asks before restoring because existing files may be overwritten; use `--yes` to confirm non-interactively.
