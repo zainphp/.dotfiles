@@ -34,6 +34,6 @@ fi
 cd "$dotfiles_dir"
 ./scripts/install-packages.sh
 ./scripts/symlink-dotfiles.sh
-printf '\nBootstrap complete. If you have a backup archive, restore it with:\n  %s/scripts/restore.sh /path/to/backup.tar.gz\n' \
+printf '\nBootstrap complete. Open a new terminal session to use Zsh. If you have a backup archive, restore it with:\n  %s/scripts/restore.sh /path/to/backup.tar.gz\n' \
   "$dotfiles_dir"
 printf 'Check packages and binaries with:\n  %s/scripts/check-packages.sh\n' "$dotfiles_dir"

@@ -7,8 +7,10 @@ trap 'rm -rf "$tmp_home"' 0
 trap 'exit 1' HUP INT TERM
 PHPVM_DIR="$tmp_home/.phpvm"
 ZSH="$tmp_home/.oh-my-zsh"
+SHELL_TEST_LOG="$tmp_home/shell-change.log"
 export PHPVM_DIR
 export ZSH
+export SHELL_TEST_LOG
 
 printf 'old zsh config\n' > "$tmp_home/.zshrc"
 printf 'old git config\n' > "$tmp_home/.gitconfig"
@@ -36,6 +38,10 @@ EOF
 cat > "$tmp_home/mock-bin/sudo" <<'EOF'
 #!/bin/sh
 exec "$@"
+EOF
+cat > "$tmp_home/mock-bin/chsh" <<'EOF'
+#!/bin/sh
+printf '%s\n' "$*" >> "$SHELL_TEST_LOG"
 EOF
 cat > "$tmp_home/mock-bin/safe-chain" <<'EOF'
 #!/bin/sh
@@ -94,7 +100,7 @@ cat > "$tmp_home/mock-bin/sqlite3" <<'EOF'
 #!/bin/sh
 printf '3.53.4 2025-06-30 14:12:18\n'
 EOF
-chmod +x "$tmp_home/mock-bin/pacman" "$tmp_home/mock-bin/sudo" \
+chmod +x "$tmp_home/mock-bin/pacman" "$tmp_home/mock-bin/sudo" "$tmp_home/mock-bin/chsh" \
   "$tmp_home/mock-bin/safe-chain" "$tmp_home/mock-bin/bun" \
   "$tmp_home/.bun/bin/bun" "$tmp_home/.local/bin/composer" \
   "$tmp_home/.phpvm/bin/phpvm" "$tmp_home/.config/composer/vendor/bin/laravel" \
@@ -103,9 +109,10 @@ output=$(PATH="$tmp_home/mock-bin:$PATH" HOME="$tmp_home" BUN_INSTALL="$tmp_home
   PHPVM_TEST_LOG="$tmp_home/phpvm-package.log" PACKAGE_TEST_LOG="$tmp_home/pacman.log" \
   "$repo_dir/scripts/install-packages.sh")
 case "$output" in
-  *'[1/6] System packages (pacman) (0%)'*'[1/6] System packages (pacman) (100%)'*'[2/6] Aikido Safe Chain (0%)'*'[2/6] Aikido Safe Chain (100%)'*'[3/6] Bun (0%)'*'[3/6] Bun (100%)'*'[4/6] Oh My Zsh (0%)'*'[4/6] Oh My Zsh (100%)'*'[5/6] PHPVM (0%)'*'[5/6] PHPVM (100%)'*'[6/6] Composer (0%)'*'[6/6] Composer (100%)'*'Package setup complete.'*) ;;
+  *'[1/7] System packages (pacman) (0%)'*'[1/7] System packages (pacman) (100%)'*'[2/7] Aikido Safe Chain (0%)'*'[2/7] Aikido Safe Chain (100%)'*'[3/7] Bun (0%)'*'[3/7] Bun (100%)'*'[4/7] Oh My Zsh (0%)'*'[4/7] Oh My Zsh (100%)'*'[5/7] Set Zsh as default shell (0%)'*'[5/7] Set Zsh as default shell (100%)'*'[6/7] PHPVM (0%)'*'[6/7] PHPVM (100%)'*'[7/7] Composer (0%)'*'[7/7] Composer (100%)'*'Package setup complete.'*) ;;
   *) printf 'package installer omitted a setup step\n' >&2; exit 1 ;;
 esac
+[ "$(cat "$SHELL_TEST_LOG")" = "-s $tmp_home/mock-bin/zsh $(id -un)" ]
 [ "$(sed -n '1p' "$tmp_home/phpvm-package.log")" = 'install latest-remote' ]
 [ "$(sed -n '2p' "$tmp_home/phpvm-package.log")" = 'use latest' ]
 case "$(cat "$tmp_home/pacman.log")" in
@@ -128,7 +135,20 @@ ln -s "$(command -v dirname)" "$apt_mock_bin/dirname"
 ln -s "$(command -v sed)" "$apt_mock_bin/sed"
 cat > "$apt_mock_bin/id" <<'EOF'
 #!/bin/sh
-printf '0\n'
+case "${1:-}" in
+  -u) printf '0\n' ;;
+  -un) printf 'testuser\n' ;;
+  *) exit 1 ;;
+esac
+EOF
+cat > "$apt_mock_bin/getent" <<'EOF'
+#!/bin/sh
+[ "$1" = passwd ] && [ "$2" = testuser ] || exit 2
+printf 'testuser:x:1000:1000:Test User:/home/testuser:/bin/bash\n'
+EOF
+cat > "$apt_mock_bin/chsh" <<'EOF'
+#!/bin/sh
+printf '%s\n' "$*" >> "$SHELL_TEST_LOG"
 EOF
 cat > "$apt_mock_bin/apt-get" <<'EOF'
 #!/bin/sh
@@ -152,7 +172,8 @@ if [ "$3" = "${MISSING_PACKAGE:-sqlite3}" ]; then
 fi
 printf 'installed 1.0\n'
 EOF
-chmod +x "$apt_mock_bin/id" "$apt_mock_bin/apt-get" "$apt_mock_bin/safe-chain" \
+chmod +x "$apt_mock_bin/id" "$apt_mock_bin/getent" "$apt_mock_bin/chsh" \
+  "$apt_mock_bin/apt-get" "$apt_mock_bin/safe-chain" \
   "$apt_mock_bin/bun" "$apt_mock_bin/dpkg-query"
 for binary in zsh code nano codex php git gh ssh rg btop sqlite3 unzip; do
   cp "$tmp_home/mock-bin/$binary" "$apt_mock_bin/$binary"
@@ -165,6 +186,7 @@ case " $(sed -n '2p' "$tmp_home/apt.log") " in
   *' sqlite3 '*) ;;
   *) printf 'Debian package list was not passed to apt-get\n' >&2; exit 1 ;;
 esac
+[ "$(sed -n '2p' "$SHELL_TEST_LOG")" = "-s $apt_mock_bin/zsh testuser" ]
 if output=$(PATH="$apt_mock_bin" HOME="$tmp_home" BUN_INSTALL="$tmp_home/.bun" \
   APT_FAIL_UPDATE=yes PACKAGE_TEST_LOG="$tmp_home/apt-fail.log" \
   "$repo_dir/scripts/install-packages.sh" 2>&1); then
@@ -172,7 +194,7 @@ if output=$(PATH="$apt_mock_bin" HOME="$tmp_home" BUN_INSTALL="$tmp_home/.bun" \
   exit 1
 fi
 case "$output" in
-  *'❌ [1/6] Failed: System packages (apt-get)'*) ;;
+  *'❌ [1/7] Failed: System packages (apt-get)'*) ;;
   *) printf 'package installer did not report a failed apt-get update\n' >&2; exit 1 ;;
 esac
 [ ! -e "$tmp_home/apt-fail.log" ]

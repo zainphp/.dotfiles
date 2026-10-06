@@ -4,7 +4,7 @@ set -eu
 script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 repo_dir=$(CDPATH= cd -- "$script_dir/.." && pwd)
 step=0
-total_steps=6
+total_steps=7
 
 if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
   blue=$(printf '\033[34m')
@@ -41,6 +41,14 @@ as_root() {
   fi
 }
 
+set_default_shell() {
+  username=$(id -un) || return $?
+  zsh_path=$(command -v zsh) || return $?
+  passwd_entry=$(getent passwd "$username") || return $?
+  current_shell=${passwd_entry##*:}
+  [ "$current_shell" = "$zsh_path" ] || as_root chsh -s "$zsh_path" "$username"
+}
+
 install_packages() {
   package_file=$1
   set --
@@ -75,6 +83,7 @@ run_step "System packages ($package_manager)" install_packages "$package_file"
 run_step 'Aikido Safe Chain' "$script_dir/installers/aikido.sh"
 run_step Bun "$script_dir/installers/bun.sh"
 run_step 'Oh My Zsh' "$script_dir/installers/oh-my-zsh.sh"
+run_step 'Set Zsh as default shell' set_default_shell
 run_step PHPVM "$script_dir/installers/phpvm.sh"
 run_step Composer "$script_dir/installers/composer.sh"
 printf '\n🎉 Package setup complete.\n'
