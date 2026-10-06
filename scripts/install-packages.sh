@@ -46,5 +46,6 @@ fi
 
 "$script_dir/installers/aikido.sh"
 "$script_dir/installers/bun.sh"
+"$script_dir/installers/oh-my-zsh.sh"
 "$script_dir/installers/phpvm.sh"
 "$script_dir/installers/composer.sh"

@@ -22,7 +22,7 @@ Check packages after installation:
 
 The bootstrap installs Git if needed, clones this repository, installs packages from the [Arch](packages/arch.txt) or [Debian/Ubuntu](packages/debian.txt) list, then replaces existing `~/.zshrc` and `~/.gitconfig` files with links into the repo. Package installation may prompt for `sudo`.
 
-The package installer sets up PHPVM, selects its newest available PHP version, then installs Composer. Oh My Zsh and Bun load from their usual `$HOME` locations. VS Code is preferred when `code` is available; otherwise the editor is Nano.
+The package installer installs Oh My Zsh and Bun, then sets up PHPVM with its newest available PHP version before installing Composer. VS Code is preferred when `code` is available; otherwise the editor is Nano.
 
 GitHub authentication uses GitHub CLI (`gh auth login`). Keep credentials and private keys outside this repository.
 
@@ -34,7 +34,7 @@ In a trusted project, run `project-path` from its root to add existing `node_mod
 
 ### Shell and editors
 
-- [Zsh](https://zsh.sourceforge.io/) with optional [Oh My Zsh](https://ohmyz.sh/) `git`, `gh`, and `bun` plugins plus [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions).
+- [Zsh](https://zsh.sourceforge.io/) with [Oh My Zsh](https://ohmyz.sh/) `git`, `gh`, and `bun` plugins plus [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions).
 - [Visual Studio Code](https://code.visualstudio.com/docs) and [Nano](https://www.nano-editor.org/docs.php).
 
 ### AI and agent tools

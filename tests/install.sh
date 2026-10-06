@@ -6,7 +6,9 @@ tmp_home=$(mktemp -d)
 trap 'rm -rf "$tmp_home"' 0
 trap 'exit 1' HUP INT TERM
 PHPVM_DIR="$tmp_home/.phpvm"
+ZSH="$tmp_home/.oh-my-zsh"
 export PHPVM_DIR
+export ZSH
 
 printf 'old zsh config\n' > "$tmp_home/.zshrc"
 printf 'old git config\n' > "$tmp_home/.gitconfig"
@@ -44,7 +46,8 @@ cat > "$tmp_home/mock-bin/bun" <<'EOF'
 exit 0
 EOF
 mkdir -p "$tmp_home/.bun/bin" "$tmp_home/.local/bin" "$tmp_home/.phpvm/bin" \
-  "$tmp_home/.config/composer/vendor/bin"
+  "$tmp_home/.config/composer/vendor/bin" "$ZSH"
+printf '# fake Oh My Zsh\n' > "$ZSH/oh-my-zsh.sh"
 cat > "$tmp_home/.bun/bin/bun" <<'EOF'
 #!/bin/sh
 printf '1.2.3\n'
@@ -100,7 +103,7 @@ output=$(PATH="$tmp_home/mock-bin:$PATH" HOME="$tmp_home" BUN_INSTALL="$tmp_home
   PHPVM_TEST_LOG="$tmp_home/phpvm-package.log" PACKAGE_TEST_LOG="$tmp_home/pacman.log" \
   "$repo_dir/scripts/install-packages.sh")
 case "$output" in
-  *'Aikido Safe Chain is already installed; skipping.'*'Bun is already installed; skipping.'*'PHPVM is already installed; skipping manager installation.'*'Composer is already installed; skipping.'*) ;;
+  *'Aikido Safe Chain is already installed; skipping.'*'Bun is already installed; skipping.'*'Oh My Zsh is already installed; skipping.'*'PHPVM is already installed; skipping manager installation.'*'Composer is already installed; skipping.'*) ;;
   *) printf 'per-tool installers were not all run\n' >&2; exit 1 ;;
 esac
 [ "$(sed -n '1p' "$tmp_home/phpvm-package.log")" = 'install latest-remote' ]
@@ -233,6 +236,34 @@ composer_output=$(PATH="$no_php_bin" HOME="$no_php_home" "$repo_dir/scripts/inst
 case "$composer_output" in
   *'No PHP CLI is available; skipping Composer.'*) ;;
   *) printf 'Composer installer did not skip cleanly without PHP\n' >&2; exit 1 ;;
+esac
+
+# A fresh Oh My Zsh install preserves the dotfiles-managed .zshrc.
+omz_home="$tmp_home/omz-home"
+omz_mock_bin="$tmp_home/omz-mock-bin"
+mkdir -p "$omz_home" "$omz_mock_bin/.oh-my-zsh"
+ln -s "$repo_dir/.zshrc" "$omz_home/.zshrc"
+cat > "$omz_mock_bin/curl" <<'EOF'
+#!/bin/sh
+[ "$1" = '-fsSL' ] && [ "$2" = 'https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh' ] && [ "$3" = '-o' ] || exit 1
+cat > "$4" <<'INSTALLER'
+#!/bin/sh
+[ "$KEEP_ZSHRC" = yes ] && [ "$RUNZSH" = no ] && [ "$CHSH" = no ] || exit 1
+[ -L "$HOME/.zshrc" ] || exit 1
+mkdir -p "$ZSH"
+printf '# fake Oh My Zsh\n' > "$ZSH/oh-my-zsh.sh"
+INSTALLER
+EOF
+chmod +x "$omz_mock_bin/curl"
+PATH="$omz_mock_bin:/usr/bin:/bin" HOME="$omz_home" ZSH="$omz_home/.oh-my-zsh" \
+  "$repo_dir/scripts/installers/oh-my-zsh.sh"
+[ "$(readlink "$omz_home/.zshrc")" = "$repo_dir/.zshrc" ]
+[ -s "$omz_home/.oh-my-zsh/oh-my-zsh.sh" ]
+omz_output=$(PATH="$omz_mock_bin:/usr/bin:/bin" HOME="$omz_home" ZSH="$omz_home/.oh-my-zsh" \
+  "$repo_dir/scripts/installers/oh-my-zsh.sh")
+case "$omz_output" in
+  *'Oh My Zsh is already installed; skipping.'*) ;;
+  *) printf 'Oh My Zsh installer did not skip an existing install\n' >&2; exit 1 ;;
 esac
 
 # A fresh PHPVM install keeps the upstream setup out of the user's Zsh config.
