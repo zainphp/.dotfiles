@@ -1,6 +1,9 @@
 #!/bin/sh
 set -eu
 
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+. "$script_dir/../download.sh"
+
 # Installation reference: https://getcomposer.org/doc/faqs/how-to-install-composer-programmatically.md
 composer_bin="$HOME/.local/bin/composer"
 if [ -x "$composer_bin" ]; then
@@ -14,8 +17,8 @@ fi
 
 installer=$(mktemp)
 trap 'rm -f "$installer"' 0
-expected_signature=$(curl -fsSL https://composer.github.io/installer.sig)
-curl -fsSL https://getcomposer.org/installer -o "$installer"
+expected_signature=$(download_text https://composer.github.io/installer.sig)
+download_file https://getcomposer.org/installer "$installer"
 actual_signature=$(php -r 'echo hash_file("sha384", $argv[1]);' "$installer")
 if [ "$expected_signature" != "$actual_signature" ]; then
   printf 'Composer installer signature verification failed.\n' >&2

@@ -10,7 +10,7 @@ export PHPVM_DIR
 
 printf 'old zsh config\n' > "$tmp_home/.zshrc"
 printf 'old git config\n' > "$tmp_home/.gitconfig"
-HOME="$tmp_home" "$repo_dir/scripts/install.sh"
+HOME="$tmp_home" "$repo_dir/scripts/symlink-dotfiles.sh"
 
 [ "$(readlink "$tmp_home/.zshrc")" = "$repo_dir/.zshrc" ]
 [ "$(readlink "$tmp_home/.gitconfig")" = "$repo_dir/.gitconfig" ]
@@ -19,7 +19,7 @@ set -- "$tmp_home"/.dotfiles-backup.*
 [ "$(cat "$1/.zshrc")" = 'old zsh config' ]
 [ "$(cat "$1/.gitconfig")" = 'old git config' ]
 
-HOME="$tmp_home" "$repo_dir/scripts/install.sh"
+HOME="$tmp_home" "$repo_dir/scripts/symlink-dotfiles.sh"
 set -- "$tmp_home"/.dotfiles-backup.*
 [ "$#" -eq 1 ]
 
@@ -70,7 +70,7 @@ cat > "$tmp_home/.bun/bin/sentry-mcp" <<'EOF'
 #!/bin/sh
 exit 0
 EOF
-for binary in zsh code nano codex php git gh ssh rg btop htop sqlite3 chromium curl unzip; do
+for binary in zsh code nano codex php git gh ssh rg btop htop sqlite3 chromium unzip; do
   cat > "$tmp_home/mock-bin/$binary" <<EOF
 #!/bin/sh
 printf '%s 1.0\\n' '$binary'
@@ -84,7 +84,7 @@ chmod +x "$tmp_home/mock-bin/pacman" "$tmp_home/mock-bin/sudo" \
   "$tmp_home/.bun/bin/sentry-mcp"
 output=$(PATH="$tmp_home/mock-bin:$PATH" HOME="$tmp_home" BUN_INSTALL="$tmp_home/.bun" \
   PHPVM_TEST_LOG="$tmp_home/phpvm-package.log" PACKAGE_TEST_LOG="$tmp_home/pacman.log" \
-  "$repo_dir/scripts/install.sh" --packages)
+  "$repo_dir/scripts/install-packages.sh")
 case "$output" in
   *'Aikido Safe Chain is already installed; skipping.'*'Bun is already installed; skipping.'*'PHPVM is already installed; skipping manager installation.'*'Composer is already installed; skipping.'*) ;;
   *) printf 'per-tool installers were not all run\n' >&2; exit 1 ;;
@@ -92,7 +92,7 @@ esac
 [ "$(sed -n '1p' "$tmp_home/phpvm-package.log")" = 'install latest-remote' ]
 [ "$(sed -n '2p' "$tmp_home/phpvm-package.log")" = 'use latest' ]
 case "$(cat "$tmp_home/pacman.log")" in
-  '-S --needed '*) ;;
+  '-S --needed --noconfirm '*) ;;
   *) exit 1 ;;
 esac
 if output=$(PATH="$tmp_home/mock-bin:$PATH" HOME="$tmp_home" BUN_INSTALL="$tmp_home/.bun" \
@@ -133,12 +133,12 @@ printf 'installed 1.0\n'
 EOF
 chmod +x "$apt_mock_bin/id" "$apt_mock_bin/apt-get" "$apt_mock_bin/safe-chain" \
   "$apt_mock_bin/bun" "$apt_mock_bin/dpkg-query"
-for binary in zsh code nano codex php git gh ssh rg btop htop sqlite3 chromium curl unzip; do
+for binary in zsh code nano codex php git gh ssh rg btop htop sqlite3 chromium unzip; do
   cp "$tmp_home/mock-bin/$binary" "$apt_mock_bin/$binary"
 done
 : > "$tmp_home/apt.log"
 PATH="$apt_mock_bin" HOME="$tmp_home" BUN_INSTALL="$tmp_home/.bun" PACKAGE_TEST_LOG="$tmp_home/apt.log" \
-  "$repo_dir/scripts/install.sh" --packages
+  "$repo_dir/scripts/install-packages.sh"
 [ "$(sed -n '1p' "$tmp_home/apt.log")" = update ]
 case " $(sed -n '2p' "$tmp_home/apt.log") " in
   *' sqlite3 '*) ;;
@@ -185,7 +185,7 @@ case "$output" in
   *'installed: bun 1.2.3'*'installed: composer Composer version 2.8.0'*'installed: safe-chain safe-chain 1.5.24'*) ;;
   *) printf 'package checker omitted installer-managed tool versions\n' >&2; exit 1 ;;
 esac
-for binary in zsh code nano codex bun phpvm php composer laravel git gh ssh rg btop htop sqlite3 chromium curl unzip safe-chain sentry-mcp; do
+for binary in zsh code nano codex bun phpvm php composer laravel git gh ssh rg btop htop sqlite3 chromium unzip safe-chain sentry-mcp; do
   case "$output" in
     *"installed: $binary "*) ;;
     *) printf 'package checker omitted README binary %s\n' "$binary" >&2; exit 1 ;;
@@ -197,6 +197,12 @@ output=$(PATH="$apt_mock_bin" HOME="$tmp_home" BUN_INSTALL="$tmp_home/.bun" MISS
 case "$output" in
   *'optional missing: code'*'All required packages and binaries are installed.'*) ;;
   *) printf 'package checker treated an optional binary as required\n' >&2; exit 1 ;;
+esac
+case "$output" in
+  *'installed: curl '*|*'installed: wget '*)
+    printf 'package checker still listed a bootstrap downloader\n' >&2
+    exit 1
+    ;;
 esac
 
 # A fresh PHPVM install must not append upstream shell setup to the user's Zsh config.
@@ -231,5 +237,117 @@ PATH="$phpvm_mock_bin:/usr/bin:/bin" HOME="$phpvm_home" PHPVM_DIR="$phpvm_home/.
 [ "$(cat "$phpvm_home/.zshrc")" = 'keep this zsh config' ]
 [ "$(sed -n '1p' "$phpvm_home/phpvm.log")" = 'install latest-remote' ]
 [ "$(sed -n '2p' "$phpvm_home/phpvm.log")" = 'use latest' ]
+
+# Installer downloads work when only wget is available.
+download_bin="$tmp_home/download-bin"
+mkdir -p "$download_bin"
+cat > "$download_bin/wget" <<'EOF'
+#!/bin/sh
+if [ "$1" = '-qO' ] && [ "$3" = https://example.test/installer ]; then
+  printf 'installer\n' > "$2"
+elif [ "$1" = '-qO-' ] && [ "$2" = https://example.test/signature ]; then
+  printf 'signature\n'
+else
+  exit 1
+fi
+EOF
+chmod +x "$download_bin/wget"
+(
+  PATH="$download_bin"
+  export PATH
+  . "$repo_dir/scripts/download.sh"
+  download_file https://example.test/installer "$tmp_home/downloaded"
+  IFS= read -r downloaded < "$tmp_home/downloaded"
+  [ "$downloaded" = installer ]
+  [ "$(download_text https://example.test/signature)" = signature ]
+)
+
+# A fresh bootstrap installs Git, clones the repo, then installs packages and links configs.
+bootstrap_git_mock="$tmp_home/bootstrap-git"
+cat > "$bootstrap_git_mock" <<'GIT'
+#!/bin/sh
+[ "$1" = clone ] && [ "$2" = 'https://github.com/zainphp/.dotfiles.git' ] || exit 1
+printf 'clone\n' >> "$BOOTSTRAP_MARKER"
+mkdir -p "$3/.git" "$3/scripts"
+cat > "$3/scripts/install-packages.sh" <<'PACKAGES'
+#!/bin/sh
+printf 'packages\n' >> "$BOOTSTRAP_MARKER"
+PACKAGES
+cat > "$3/scripts/symlink-dotfiles.sh" <<'LINKER'
+#!/bin/sh
+printf 'link\n' >> "$BOOTSTRAP_MARKER"
+LINKER
+chmod +x "$3/scripts/install-packages.sh" "$3/scripts/symlink-dotfiles.sh"
+GIT
+
+setup_bootstrap_bin() {
+  target=$1
+  package_manager=$2
+  mkdir -p "$target"
+  for utility in cat chmod cp mkdir; do
+    ln -s "$(command -v "$utility")" "$target/$utility"
+  done
+  cat > "$target/id" <<'ID'
+#!/bin/sh
+printf '0\n'
+ID
+  cat > "$target/package-manager" <<'MANAGER'
+#!/bin/sh
+manager=${0##*/}
+if [ "$manager" = apt-get ] && [ "$*" = update ]; then
+  printf 'apt-update\n' >> "$BOOTSTRAP_MARKER"
+  exit 0
+fi
+case "$manager:$*" in
+  'pacman:-S --needed --noconfirm git'|'apt-get:install --yes git') ;;
+  *) exit 1 ;;
+esac
+printf 'install-git\n' >> "$BOOTSTRAP_MARKER"
+cp "$BOOTSTRAP_GIT_MOCK" "$BOOTSTRAP_BIN/git"
+chmod +x "$BOOTSTRAP_BIN/git"
+MANAGER
+  chmod +x "$target/id" "$target/package-manager"
+  ln -s package-manager "$target/$package_manager"
+}
+
+for package_manager in pacman apt-get; do
+  bootstrap_home="$tmp_home/bootstrap-$package_manager-home"
+  bootstrap_bin="$tmp_home/bootstrap-$package_manager-bin"
+  mkdir -p "$bootstrap_home"
+  setup_bootstrap_bin "$bootstrap_bin" "$package_manager"
+  bootstrap_output=$(PATH="$bootstrap_bin" HOME="$bootstrap_home" \
+    BOOTSTRAP_BIN="$bootstrap_bin" BOOTSTRAP_GIT_MOCK="$bootstrap_git_mock" \
+    BOOTSTRAP_MARKER="$bootstrap_home/result" "$repo_dir/scripts/bootstrap.sh")
+  if [ "$package_manager" = pacman ]; then
+    [ "$(sed -n '1p' "$bootstrap_home/result")" = install-git ]
+    next_step=2
+  else
+    [ "$(sed -n '1p' "$bootstrap_home/result")" = apt-update ]
+    [ "$(sed -n '2p' "$bootstrap_home/result")" = install-git ]
+    next_step=3
+  fi
+  [ "$(sed -n "${next_step}p" "$bootstrap_home/result")" = clone ]
+  [ "$(sed -n "$((next_step + 1))p" "$bootstrap_home/result")" = packages ]
+  [ "$(sed -n "$((next_step + 2))p" "$bootstrap_home/result")" = link ]
+  case "$bootstrap_output" in
+    *"$bootstrap_home/.dotfiles/scripts/restore.sh /path/to/backup.tar.gz"*) ;;
+    *) printf 'bootstrap did not suggest the restore command\n' >&2; exit 1 ;;
+  esac
+  case "$bootstrap_output" in
+    *"$bootstrap_home/.dotfiles/scripts/check-packages.sh"*) ;;
+    *) printf 'bootstrap did not suggest checking packages\n' >&2; exit 1 ;;
+  esac
+done
+
+conflict_home="$tmp_home/conflict-home"
+mkdir -p "$conflict_home/.dotfiles"
+printf 'keep\n' > "$conflict_home/.dotfiles/sentinel"
+if PATH="$bootstrap_bin" HOME="$conflict_home" \
+  BOOTSTRAP_BIN="$bootstrap_bin" BOOTSTRAP_GIT_MOCK="$bootstrap_git_mock" \
+  BOOTSTRAP_MARKER="$conflict_home/result" "$repo_dir/scripts/bootstrap.sh" >/dev/null 2>&1; then
+  printf 'bootstrap accepted a non-repository .dotfiles path\n' >&2
+  exit 1
+fi
+[ "$(cat "$conflict_home/.dotfiles/sentinel")" = keep ]
 
 printf 'installer checks passed\n'

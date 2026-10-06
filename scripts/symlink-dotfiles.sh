@@ -24,21 +24,10 @@ backup_and_link() {
   ln -s "$source_file" "$target_file"
 }
 
-case "${1:-}" in
-  '')
-    backup_and_link "$repo_dir/.zshrc" "$HOME/.zshrc"
-    backup_and_link "$repo_dir/.gitconfig" "$HOME/.gitconfig"
-    ;;
-  --packages)
-    exec "$script_dir/install-packages.sh"
-    ;;
-  -h|--help)
-    printf 'Usage: %s [--packages]\n' "$0"
-    printf 'Default: link dotfiles and back up replaced files.\n'
-    printf '%s\n' '--packages: install system packages, Aikido Safe Chain, Bun, PHPVM, and Composer.'
-    ;;
-  *)
-    printf 'Usage: %s [--packages]\n' "$0" >&2
-    exit 2
-    ;;
-esac
+if [ "$#" -gt 0 ]; then
+  printf 'Usage: %s\n' "$0" >&2
+  exit 2
+fi
+
+backup_and_link "$repo_dir/.zshrc" "$HOME/.zshrc"
+backup_and_link "$repo_dir/.gitconfig" "$HOME/.gitconfig"

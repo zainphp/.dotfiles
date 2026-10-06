@@ -98,7 +98,6 @@ if command -v chromium >/dev/null 2>&1; then
 else
   check_binary chromium chromium-browser --version
 fi
-check_binary curl curl --version
 check_binary unzip unzip -v
 
 if [ -x "$HOME/.safe-chain/bin/safe-chain" ]; then

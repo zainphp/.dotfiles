@@ -25,7 +25,7 @@ install_packages() {
   [ "$#" -gt 0 ] || return 0
 
   if command -v pacman >/dev/null 2>&1; then
-    as_root pacman -S --needed "$@"
+    as_root pacman -S --needed --noconfirm "$@"
   elif command -v apt-get >/dev/null 2>&1; then
     as_root apt-get update
     as_root apt-get install --yes "$@"

@@ -3,12 +3,15 @@
 Portable Linux shell and Git settings for Arch and Debian/Ubuntu.
 
 ```sh
-./scripts/install.sh           # link .zshrc and .gitconfig; back up replaced files
-./scripts/install.sh --packages # install system packages, Aikido Safe Chain, Bun, PHPVM, and Composer
-./scripts/check-packages.sh    # check distro packages and README binaries; print versions
+# Fresh install (requires curl or wget; installs packages and links configs)
+curl -fsSL https://raw.githubusercontent.com/zainphp/.dotfiles/main/scripts/bootstrap.sh | sh
+# Or: wget -qO- https://raw.githubusercontent.com/zainphp/.dotfiles/main/scripts/bootstrap.sh | sh
+
+# Optional: check the setup
+"$HOME/.dotfiles/scripts/check-packages.sh"
 ```
 
-The `--packages` option installs packages from the [Arch package list](packages/arch.txt) or [Debian/Ubuntu package list](packages/debian.txt) using `pacman` or `apt-get`, then runs the separate installers for [Aikido Safe Chain](scripts/installers/aikido.sh), [Bun](scripts/installers/bun.sh), [PHPVM](scripts/installers/phpvm.sh), and [Composer](scripts/installers/composer.sh). Their installation references are [Aikido](https://github.com/AikidoSec/safe-chain), [Bun](https://bun.com/docs/installation), [PHPVM](https://github.com/Thavarshan/phpvm), and [Composer](https://getcomposer.org/doc/faqs/how-to-install-composer-programmatically.md). PHPVM installs and selects the newest PHP version available from the system package manager before Composer runs.
+The bootstrap installs Git if needed, clones this repository, installs packages from the [Arch](packages/arch.txt) or [Debian/Ubuntu](packages/debian.txt) list, then links the configs. Package installation may prompt for `sudo`.
 
 Manage PHP versions with PHPVM and install Composer for the active PHPVM version. Oh My Zsh, Bun, and PHPVM are optional and load from their usual `$HOME` locations. VS Code is preferred when `code` is available; otherwise the editor is Nano.
 
@@ -44,7 +47,7 @@ In a trusted project, run `project-path` from its root to add existing `node_mod
 
 - [Git](https://git-scm.com/doc), [GitHub CLI](https://cli.github.com/manual/), [OpenSSH](https://www.openssh.com/), and [ripgrep](https://github.com/BurntSushi/ripgrep).
 - [btop](https://github.com/aristocratos/btop), [htop](https://htop.dev/), [SQLite CLI](https://www.sqlite.org/cli.html), and [Chromium](https://www.chromium.org/chromium-projects/).
-- [curl](https://curl.se/) and [UnZip](https://infozip.sourceforge.net/UnZip.html).
+- [UnZip](https://infozip.sourceforge.net/UnZip.html).
 - [Aikido Safe Chain](https://github.com/AikidoSec/safe-chain).
 
 ## Private files to preserve
