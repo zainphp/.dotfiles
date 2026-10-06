@@ -3,31 +3,11 @@ set -eu
 
 script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 repo_dir=$(CDPATH= cd -- "$script_dir/.." && pwd)
-backup_dir=
-
-backup_and_link() {
-  source_file=$1
-  target_file=$2
-
-  if [ -L "$target_file" ] && [ "$(readlink "$target_file")" = "$source_file" ]; then
-    return
-  fi
-
-  if [ -e "$target_file" ] || [ -L "$target_file" ]; then
-    if [ -z "$backup_dir" ]; then
-      backup_dir=$(mktemp -d "$HOME/.dotfiles-backup.XXXXXX")
-    fi
-    mv "$target_file" "$backup_dir/$(basename "$target_file")"
-    printf 'Backed up %s to %s\n' "$target_file" "$backup_dir"
-  fi
-
-  ln -s "$source_file" "$target_file"
-}
 
 if [ "$#" -gt 0 ]; then
   printf 'Usage: %s\n' "$0" >&2
   exit 2
 fi
 
-backup_and_link "$repo_dir/.zshrc" "$HOME/.zshrc"
-backup_and_link "$repo_dir/.gitconfig" "$HOME/.gitconfig"
+ln -sfT "$repo_dir/.zshrc" "$HOME/.zshrc"
+ln -sfT "$repo_dir/.gitconfig" "$HOME/.gitconfig"

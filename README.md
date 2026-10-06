@@ -20,7 +20,7 @@ Check packages after installation:
 "$HOME/.dotfiles/scripts/check-packages.sh"
 ```
 
-The bootstrap installs Git if needed, clones this repository, installs packages from the [Arch](packages/arch.txt) or [Debian/Ubuntu](packages/debian.txt) list, then links the configs. Package installation may prompt for `sudo`.
+The bootstrap installs Git if needed, clones this repository, installs packages from the [Arch](packages/arch.txt) or [Debian/Ubuntu](packages/debian.txt) list, then replaces existing `~/.zshrc` and `~/.gitconfig` files with links into the repo. Package installation may prompt for `sudo`.
 
 The package installer sets up PHPVM, selects its newest available PHP version, then installs Composer. Oh My Zsh and Bun load from their usual `$HOME` locations. VS Code is preferred when `code` is available; otherwise the editor is Nano.
 

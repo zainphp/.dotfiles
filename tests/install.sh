@@ -15,13 +15,11 @@ HOME="$tmp_home" "$repo_dir/scripts/symlink-dotfiles.sh"
 [ "$(readlink "$tmp_home/.zshrc")" = "$repo_dir/.zshrc" ]
 [ "$(readlink "$tmp_home/.gitconfig")" = "$repo_dir/.gitconfig" ]
 set -- "$tmp_home"/.dotfiles-backup.*
-[ -d "$1" ]
-[ "$(cat "$1/.zshrc")" = 'old zsh config' ]
-[ "$(cat "$1/.gitconfig")" = 'old git config' ]
+[ "$#" -eq 1 ] && [ ! -e "$1" ]
 
 HOME="$tmp_home" "$repo_dir/scripts/symlink-dotfiles.sh"
 set -- "$tmp_home"/.dotfiles-backup.*
-[ "$#" -eq 1 ]
+[ "$#" -eq 1 ] && [ ! -e "$1" ]
 
 mkdir -p "$tmp_home/mock-bin"
 cat > "$tmp_home/mock-bin/pacman" <<'EOF'
