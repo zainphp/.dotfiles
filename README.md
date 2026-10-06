@@ -7,7 +7,7 @@ Portable Linux shell and Git settings for Arch and Debian/Ubuntu.
 ./scripts/install.sh --packages # install system packages and Aikido Safe Chain
 ```
 
-The `--packages` option delegates to `scripts/install-packages.sh`, which uses `pacman` or `apt-get` and asks for `sudo` when needed. It installs the listed system packages and Aikido Safe Chain with its checksum-verified upstream installer. The package lists include zsh-autosuggestions and Python 3.
+The `--packages` option installs packages from the [Arch package list](packages/arch.txt) or [Debian/Ubuntu package list](packages/debian.txt) using `pacman` or `apt-get`, then installs Aikido Safe Chain with its checksum-verified upstream installer.
 
 Manage PHP versions with PHPVM and install Composer for the active PHPVM version. Oh My Zsh, Bun, and PHPVM are optional and load from their usual `$HOME` locations. VS Code is preferred when `code` is available; otherwise the editor is Nano.
 
@@ -19,7 +19,7 @@ For local environment variables, add exports to the ignored `.zshrc.local` file.
 
 ### Shell and editors
 
-- [Zsh](https://zsh.sourceforge.io/) with optional [Oh My Zsh](https://ohmyz.sh/) `git`, `gh`, and `bun` plugins plus [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions), installed by `./scripts/install.sh --packages`.
+- [Zsh](https://zsh.sourceforge.io/) with optional [Oh My Zsh](https://ohmyz.sh/) `git`, `gh`, and `bun` plugins plus [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions).
 - [Visual Studio Code](https://code.visualstudio.com/docs) and [Nano](https://www.nano-editor.org/docs.php).
 
 ### AI and agent tools
@@ -51,7 +51,7 @@ Keep these out of Git. `./scripts/backup.sh` archives these locations; the archi
 - `~/.ssh/` — SSH keys and configuration.
 - `~/projects/` — source files, uncommitted work, ignored files, and project `.env` files.
 - `~/.codex/sessions/`, `~/.codex/memories/`, `~/.codex/*.jsonl`, and `~/.codex/*.sqlite*` — Codex sessions, memories, JSONL records, and databases. Close Codex before backing up.
-- `~/dotfiles/.zshrc.local` — local shell exports; this file is Git-ignored and included in the dotfiles archive.
+- `~/.dotfiles/.zshrc.local` — local shell exports; this file is Git-ignored and included in the dotfiles archive.
 - Zsh command log — saved from the home directory.
 
 Do not commit `.env` files, private keys, or login tokens. `scripts/backup.sh` excludes `~/.codex/auth.json`; sign in again with Codex and `gh auth login` after reinstalling.

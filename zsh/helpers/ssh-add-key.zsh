@@ -11,7 +11,7 @@ ssh-add-key() {
   fi
 
   local agent_ready=0 agent_status socket
-  if [[ -n "${SSH_AUTH_SOCK:-}" && -S "$SSH_AUTH_SOCK" ]]; then
+  if [[ -n "${SSH_AUTH_SOCK:-}" ]]; then
     if ssh-add -l >/dev/null 2>&1; then
       agent_ready=1
     else

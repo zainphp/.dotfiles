@@ -5,6 +5,7 @@ nano
 openssh-client
 python3
 ripgrep
+sqlite3
 unzip
 curl
 zsh-autosuggestions

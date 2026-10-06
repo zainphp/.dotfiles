@@ -13,7 +13,8 @@ trap 'rm -rf -- "$tmp_root"' EXIT
 mkdir -p "$tmp_home/.ssh" "$mock_bin"
 printf 'private key placeholder\n' > "$tmp_home/.ssh/testkey"
 
-stale_socket=$(find "/run/user/$(id -u)" /tmp -type s -print -quit 2>/dev/null || true)
+stale_socket="$tmp_root/stale-agent.sock"
+: > "$stale_socket"
 
 cat > "$mock_bin/find" <<'EOF'
 #!/bin/sh
@@ -67,10 +68,8 @@ run_ssh_add_key() {
 }
 
 : > "$ssh_add_log"
-if [[ -n "$stale_socket" ]]; then
-  run_ssh_add_key "$stale_socket"
-  [[ "$(cat "$ssh_add_log")" == "$fresh_socket|$tmp_home/.ssh/testkey" ]]
-fi
+run_ssh_add_key "$stale_socket"
+[[ "$(cat "$ssh_add_log")" == "$fresh_socket|$tmp_home/.ssh/testkey" ]]
 
 : > "$ssh_add_log"
 run_ssh_add_key ''

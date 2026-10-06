@@ -5,6 +5,7 @@ nano
 openssh
 python
 ripgrep
+sqlite
 unzip
 curl
 zsh-autosuggestions
