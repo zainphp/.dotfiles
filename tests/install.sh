@@ -103,7 +103,7 @@ output=$(PATH="$tmp_home/mock-bin:$PATH" HOME="$tmp_home" BUN_INSTALL="$tmp_home
   PHPVM_TEST_LOG="$tmp_home/phpvm-package.log" PACKAGE_TEST_LOG="$tmp_home/pacman.log" \
   "$repo_dir/scripts/install-packages.sh")
 case "$output" in
-  *'[1/6] System packages (pacman)'*'[2/6] Aikido Safe Chain'*'[3/6] Bun'*'[4/6] Oh My Zsh'*'[5/6] PHPVM'*'[6/6] Composer'*'Package setup complete.'*) ;;
+  *'[1/6] System packages (pacman) (0%)'*'[1/6] System packages (pacman) (100%)'*'[2/6] Aikido Safe Chain (0%)'*'[2/6] Aikido Safe Chain (100%)'*'[3/6] Bun (0%)'*'[3/6] Bun (100%)'*'[4/6] Oh My Zsh (0%)'*'[4/6] Oh My Zsh (100%)'*'[5/6] PHPVM (0%)'*'[5/6] PHPVM (100%)'*'[6/6] Composer (0%)'*'[6/6] Composer (100%)'*'Package setup complete.'*) ;;
   *) printf 'package installer omitted a setup step\n' >&2; exit 1 ;;
 esac
 [ "$(sed -n '1p' "$tmp_home/phpvm-package.log")" = 'install latest-remote' ]

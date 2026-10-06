@@ -23,9 +23,9 @@ run_step() {
   shift
   step=$((step + 1))
 
-  printf '%s📦 [%s/%s] %s%s\n' "$blue" "$step" "$total_steps" "$label" "$reset"
+  printf '%s📦 [%s/%s] %s (0%%)%s\n' "$blue" "$step" "$total_steps" "$label" "$reset"
   if "$@" >/dev/null; then
-    printf '%s✅ [%s/%s] Done%s\n' "$green" "$step" "$total_steps" "$reset"
+    printf '%s✅ [%s/%s] %s (100%%)%s\n' "$green" "$step" "$total_steps" "$label" "$reset"
   else
     status=$?
     printf '%s❌ [%s/%s] Failed: %s%s\n' "$red" "$step" "$total_steps" "$label" "$reset" >&2
