@@ -1,6 +1,6 @@
-sshauth() {
-  if [[ -z "$1" ]]; then
-    print -u2 'Usage: sshauth key-filename'
+ssh-add-key() {
+  if [[ -z "${1:-}" ]]; then
+    print -u2 'Usage: ssh-add-key key-filename'
     return 1
   fi
 
@@ -40,7 +40,23 @@ sshauth() {
 
   local fingerprint
   fingerprint=$(ssh-keygen -lf "$ssh_key" 2>/dev/null | awk '{print $2}')
+  if [[ -z "$fingerprint" ]]; then
+    print -u2 "Could not read key fingerprint: $1"
+    return 1
+  fi
   if ! ssh-add -l 2>/dev/null | grep -Fq "$fingerprint"; then
     ssh-add "$ssh_key"
   fi
 }
+
+_ssh-add-key() {
+  _files -W "$HOME/.ssh"
+}
+
+if [[ -o interactive ]]; then
+  if (( ! $+functions[compdef] )); then
+    autoload -Uz compinit
+    compinit
+  fi
+  compdef _ssh-add-key ssh-add-key sshak
+fi

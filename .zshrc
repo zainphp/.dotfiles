@@ -37,7 +37,7 @@ dotfiles_dir="${${(%):-%x}:A:h}"
 
 # Personal commands
 [[ -r "$dotfiles_dir/zsh/aliases.zsh" ]] && source "$dotfiles_dir/zsh/aliases.zsh"
-[[ -r "$dotfiles_dir/zsh/sshauth.zsh" ]] && source "$dotfiles_dir/zsh/sshauth.zsh"
+[[ -r "$dotfiles_dir/zsh/helpers/ssh-add-key.zsh" ]] && source "$dotfiles_dir/zsh/helpers/ssh-add-key.zsh"
 
 # Machine-specific settings (kept out of Git)
 dotfiles_local_config="$dotfiles_dir/.zshrc.local"
