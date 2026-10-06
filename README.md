@@ -2,12 +2,21 @@
 
 Portable Linux shell and Git settings for Arch and Debian/Ubuntu.
 
-```sh
-# Fresh install (requires curl or wget; installs packages and links configs)
-curl -fsSL https://raw.githubusercontent.com/zainphp/.dotfiles/main/scripts/bootstrap.sh | sh
-# Or: wget -qO- https://raw.githubusercontent.com/zainphp/.dotfiles/main/scripts/bootstrap.sh | sh
+Fresh install with curl:
 
-# Optional: check the setup
+```sh
+curl -fsSL https://raw.githubusercontent.com/zainphp/.dotfiles/main/scripts/bootstrap.sh | sh
+```
+
+Or with wget:
+
+```sh
+wget -qO- https://raw.githubusercontent.com/zainphp/.dotfiles/main/scripts/bootstrap.sh | sh
+```
+
+Check packages after installation:
+
+```sh
 "$HOME/.dotfiles/scripts/check-packages.sh"
 ```
 
