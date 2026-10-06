@@ -11,8 +11,8 @@ if [ -x "$composer_bin" ]; then
   exit 0
 fi
 if ! command -v php >/dev/null 2>&1; then
-  printf 'Composer requires an active PHP CLI; select a PHP version with PHPVM and rerun the package installer.\n' >&2
-  exit 1
+  printf 'No PHP CLI is available; skipping Composer. Set up PHP and rerun install-packages.sh.\n'
+  exit 0
 fi
 
 installer=$(mktemp)

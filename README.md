@@ -22,7 +22,7 @@ Check packages after installation:
 
 The bootstrap installs Git if needed, clones this repository, installs packages from the [Arch](packages/arch.txt) or [Debian/Ubuntu](packages/debian.txt) list, then links the configs. Package installation may prompt for `sudo`.
 
-Manage PHP versions with PHPVM and install Composer for the active PHPVM version. Oh My Zsh, Bun, and PHPVM are optional and load from their usual `$HOME` locations. VS Code is preferred when `code` is available; otherwise the editor is Nano.
+The package installer sets up PHPVM, selects its newest available PHP version, then installs Composer. Oh My Zsh and Bun load from their usual `$HOME` locations. VS Code is preferred when `code` is available; otherwise the editor is Nano.
 
 GitHub authentication uses GitHub CLI (`gh auth login`). Keep credentials and private keys outside this repository.
 
@@ -55,7 +55,7 @@ In a trusted project, run `project-path` from its root to add existing `node_mod
 ### System and source-control tools
 
 - [Git](https://git-scm.com/doc), [GitHub CLI](https://cli.github.com/manual/), [OpenSSH](https://www.openssh.com/), and [ripgrep](https://github.com/BurntSushi/ripgrep).
-- [btop](https://github.com/aristocratos/btop), [htop](https://htop.dev/), [SQLite CLI](https://www.sqlite.org/cli.html), and [Chromium](https://www.chromium.org/chromium-projects/).
+- [btop](https://github.com/aristocratos/btop) and [SQLite CLI](https://www.sqlite.org/cli.html).
 - [UnZip](https://infozip.sourceforge.net/UnZip.html).
 - [Aikido Safe Chain](https://github.com/AikidoSec/safe-chain).
 

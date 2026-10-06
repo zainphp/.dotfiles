@@ -70,13 +70,29 @@ cat > "$tmp_home/.bun/bin/sentry-mcp" <<'EOF'
 #!/bin/sh
 exit 0
 EOF
-for binary in zsh code nano codex php git gh ssh rg btop htop sqlite3 chromium unzip; do
+for binary in zsh code nano codex php git gh ssh rg btop sqlite3 unzip; do
   cat > "$tmp_home/mock-bin/$binary" <<EOF
 #!/bin/sh
 printf '%s 1.0\\n' '$binary'
 EOF
   chmod +x "$tmp_home/mock-bin/$binary"
 done
+cat > "$tmp_home/mock-bin/php" <<'EOF'
+#!/bin/sh
+printf 'PHP 8.5.0 (cli)\nCopyright details omitted\n'
+EOF
+cat > "$tmp_home/mock-bin/btop" <<'EOF'
+#!/bin/sh
+printf 'btop version: \033[31m1.4.7\033[0m\nBuild details omitted\n'
+EOF
+cat > "$tmp_home/mock-bin/ssh" <<'EOF'
+#!/bin/sh
+printf 'OpenSSH_10.5p1, OpenSSL 3.6.4\n'
+EOF
+cat > "$tmp_home/mock-bin/sqlite3" <<'EOF'
+#!/bin/sh
+printf '3.53.4 2025-06-30 14:12:18\n'
+EOF
 chmod +x "$tmp_home/mock-bin/pacman" "$tmp_home/mock-bin/sudo" \
   "$tmp_home/mock-bin/safe-chain" "$tmp_home/mock-bin/bun" \
   "$tmp_home/.bun/bin/bun" "$tmp_home/.local/bin/composer" \
@@ -108,6 +124,7 @@ esac
 apt_mock_bin="$tmp_home/apt-mock-bin"
 mkdir -p "$apt_mock_bin"
 ln -s "$(command -v dirname)" "$apt_mock_bin/dirname"
+ln -s "$(command -v sed)" "$apt_mock_bin/sed"
 cat > "$apt_mock_bin/id" <<'EOF'
 #!/bin/sh
 printf '0\n'
@@ -133,7 +150,7 @@ printf 'installed 1.0\n'
 EOF
 chmod +x "$apt_mock_bin/id" "$apt_mock_bin/apt-get" "$apt_mock_bin/safe-chain" \
   "$apt_mock_bin/bun" "$apt_mock_bin/dpkg-query"
-for binary in zsh code nano codex php git gh ssh rg btop htop sqlite3 chromium unzip; do
+for binary in zsh code nano codex php git gh ssh rg btop sqlite3 unzip; do
   cp "$tmp_home/mock-bin/$binary" "$apt_mock_bin/$binary"
 done
 : > "$tmp_home/apt.log"
@@ -182,20 +199,24 @@ case "$output" in
   *) printf 'package checker rejected a fully installed system\n' >&2; exit 1 ;;
 esac
 case "$output" in
-  *'installed: bun 1.2.3'*'installed: composer Composer version 2.8.0'*'installed: safe-chain safe-chain 1.5.24'*) ;;
+  *'installed: bun 1.2.3'*'installed: php 8.5.0'*'installed: composer 2.8.0'*'installed: ssh 10.5p1'*'installed: btop 1.4.7'*'installed: sqlite3 3.53.4'*'installed: safe-chain 1.5.24'*) ;;
   *) printf 'package checker omitted installer-managed tool versions\n' >&2; exit 1 ;;
 esac
-for binary in zsh code nano codex bun phpvm php composer laravel git gh ssh rg btop htop sqlite3 chromium unzip safe-chain sentry-mcp; do
+for binary in zsh code nano codex bun phpvm php composer laravel git gh ssh rg btop sqlite3 unzip safe-chain; do
   case "$output" in
     *"installed: $binary "*) ;;
     *) printf 'package checker omitted README binary %s\n' "$binary" >&2; exit 1 ;;
   esac
 done
+case "$output" in
+  *'installed: sentry-mcp'*) ;;
+  *) printf 'package checker omitted README binary sentry-mcp\n' >&2; exit 1 ;;
+esac
 mv "$apt_mock_bin/code" "$tmp_home/code"
 output=$(PATH="$apt_mock_bin" HOME="$tmp_home" BUN_INSTALL="$tmp_home/.bun" MISSING_PACKAGE=none \
   "$repo_dir/scripts/check-packages.sh")
 case "$output" in
-  *'optional missing: code'*'All required packages and binaries are installed.'*) ;;
+  *'optional: code'*'All required packages and binaries are installed.'*) ;;
   *) printf 'package checker treated an optional binary as required\n' >&2; exit 1 ;;
 esac
 case "$output" in
@@ -205,7 +226,18 @@ case "$output" in
     ;;
 esac
 
-# A fresh PHPVM install must not append upstream shell setup to the user's Zsh config.
+# Composer is skipped successfully until the user sets up PHP.
+no_php_home="$tmp_home/no-php-home"
+no_php_bin="$tmp_home/no-php-bin"
+mkdir -p "$no_php_home" "$no_php_bin"
+ln -s "$(command -v dirname)" "$no_php_bin/dirname"
+composer_output=$(PATH="$no_php_bin" HOME="$no_php_home" "$repo_dir/scripts/installers/composer.sh")
+case "$composer_output" in
+  *'No PHP CLI is available; skipping Composer.'*) ;;
+  *) printf 'Composer installer did not skip cleanly without PHP\n' >&2; exit 1 ;;
+esac
+
+# A fresh PHPVM install keeps the upstream setup out of the user's Zsh config.
 phpvm_home="$tmp_home/phpvm-home"
 phpvm_mock_bin="$tmp_home/phpvm-mock-bin"
 mkdir -p "$phpvm_home" "$phpvm_mock_bin"

@@ -15,7 +15,28 @@ else
 fi
 
 missing=0
-printf 'System packages (%s):\n' "$package_manager"
+if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
+  green=$(printf '\033[32m')
+  yellow=$(printf '\033[33m')
+  red=$(printf '\033[31m')
+  reset=$(printf '\033[0m')
+else
+  green=
+  yellow=
+  red=
+  reset=
+fi
+
+print_status() {
+  case "$1" in
+    installed) color=$green ;;
+    optional) color=$yellow ;;
+    *) color=$red ;;
+  esac
+  printf '%s%s:%s %s\n' "$color" "$1" "$reset" "$2"
+}
+
+printf 'Packages:\n'
 while IFS= read -r package || [ -n "$package" ]; do
   case "$package" in
     ''|'#'*) continue ;;
@@ -36,9 +57,9 @@ while IFS= read -r package || [ -n "$package" ]; do
     fi
   fi
   if [ -n "${version:-}" ]; then
-    printf 'installed: %s %s\n' "$package" "$version"
+    print_status installed "$package $version"
   else
-    printf 'missing: %s\n' "$package"
+    print_status missing "$package"
   fi
   unset version
 done < "$package_file"
@@ -57,22 +78,24 @@ check_binary() {
   esac
   if [ -z "$executable" ]; then
     if [ "$optional" = yes ]; then
-      printf 'optional missing: %s\n' "$name"
+      print_status optional "$name"
     else
-      printf 'missing: %s\n' "$name"
+      print_status missing "$name"
       missing=1
     fi
   elif [ "$version_arg" = none ]; then
-    printf 'installed: %s (%s; version unavailable)\n' "$name" "$executable"
+    print_status installed "$name"
   elif version=$("$executable" "$version_arg" 2>&1); then
-    printf 'installed: %s %s\n' "$name" "$version"
+    escape=$(printf '\033')
+    version=$(printf '%s\n' "$version" | sed -n "s/${escape}\\[[0-9;]*m//g;1{s/^[^0-9]*//;s/[^[:alnum:].+_-].*//;p;}")
+    print_status installed "${name}${version:+ $version}"
   else
-    printf 'missing: %s (version check failed)\n' "$name"
+    print_status missing "$name (version check failed)"
     missing=1
   fi
 }
 
-printf '\nREADME binaries:\n'
+printf '\nCommands:\n'
 check_binary zsh zsh --version
 check_binary code code --version yes
 check_binary nano nano --version
@@ -91,13 +114,7 @@ check_binary gh gh --version
 check_binary ssh ssh -V
 check_binary rg rg --version
 check_binary btop btop --version
-check_binary htop htop --version
 check_binary sqlite3 sqlite3 --version
-if command -v chromium >/dev/null 2>&1; then
-  check_binary chromium chromium --version
-else
-  check_binary chromium chromium-browser --version
-fi
 check_binary unzip unzip -v
 
 if [ -x "$HOME/.safe-chain/bin/safe-chain" ]; then
