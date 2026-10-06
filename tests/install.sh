@@ -103,8 +103,8 @@ output=$(PATH="$tmp_home/mock-bin:$PATH" HOME="$tmp_home" BUN_INSTALL="$tmp_home
   PHPVM_TEST_LOG="$tmp_home/phpvm-package.log" PACKAGE_TEST_LOG="$tmp_home/pacman.log" \
   "$repo_dir/scripts/install-packages.sh")
 case "$output" in
-  *'Aikido Safe Chain is already installed; skipping.'*'Bun is already installed; skipping.'*'Oh My Zsh is already installed; skipping.'*'PHPVM is already installed; skipping manager installation.'*'Composer is already installed; skipping.'*) ;;
-  *) printf 'per-tool installers were not all run\n' >&2; exit 1 ;;
+  *'[1/6] System packages (pacman)'*'[2/6] Aikido Safe Chain'*'[3/6] Bun'*'[4/6] Oh My Zsh'*'[5/6] PHPVM'*'[6/6] Composer'*'Package setup complete.'*) ;;
+  *) printf 'package installer omitted a setup step\n' >&2; exit 1 ;;
 esac
 [ "$(sed -n '1p' "$tmp_home/phpvm-package.log")" = 'install latest-remote' ]
 [ "$(sed -n '2p' "$tmp_home/phpvm-package.log")" = 'use latest' ]
@@ -132,6 +132,9 @@ printf '0\n'
 EOF
 cat > "$apt_mock_bin/apt-get" <<'EOF'
 #!/bin/sh
+if [ "${APT_FAIL_UPDATE:-no}" = yes ] && [ "$1" = update ]; then
+  exit 42
+fi
 printf '%s\n' "$*" >> "$PACKAGE_TEST_LOG"
 EOF
 cat > "$apt_mock_bin/safe-chain" <<'EOF'
@@ -162,6 +165,18 @@ case " $(sed -n '2p' "$tmp_home/apt.log") " in
   *' sqlite3 '*) ;;
   *) printf 'Debian package list was not passed to apt-get\n' >&2; exit 1 ;;
 esac
+if output=$(PATH="$apt_mock_bin" HOME="$tmp_home" BUN_INSTALL="$tmp_home/.bun" \
+  APT_FAIL_UPDATE=yes PACKAGE_TEST_LOG="$tmp_home/apt-fail.log" \
+  "$repo_dir/scripts/install-packages.sh" 2>&1); then
+  printf 'package installer ignored a failed apt-get update\n' >&2
+  exit 1
+fi
+case "$output" in
+  *'❌ [1/6] Failed: System packages (apt-get)'*) ;;
+  *) printf 'package installer did not report a failed apt-get update\n' >&2; exit 1 ;;
+esac
+[ ! -e "$tmp_home/apt-fail.log" ]
+
 if output=$(PATH="$apt_mock_bin" HOME="$tmp_home" BUN_INSTALL="$tmp_home/.bun" \
   "$repo_dir/scripts/check-packages.sh" 2>&1); then
   printf 'package checker did not report a missing Debian package\n' >&2
