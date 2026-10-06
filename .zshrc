@@ -2,7 +2,7 @@
 export ZSH="${ZSH:-$HOME/.oh-my-zsh}"
 export ZSH_CUSTOM="${ZSH_CUSTOM:-$ZSH/custom}"
 ZSH_THEME="robbyrussell"
-plugins=(git)
+plugins=(git gh bun)
 if [[ -s "$ZSH_CUSTOM/plugins/zsh-autosuggestions/zsh-autosuggestions.plugin.zsh" && -s "$ZSH/oh-my-zsh.sh" ]]; then
   plugins+=(zsh-autosuggestions)
 fi

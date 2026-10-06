@@ -19,7 +19,7 @@ For local environment variables, add exports to the ignored `.zshrc.local` file.
 
 ### Shell and editors
 
-- [Zsh](https://zsh.sourceforge.io/) with optional [Oh My Zsh](https://ohmyz.sh/) and [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions), installed by `./scripts/install.sh --packages`.
+- [Zsh](https://zsh.sourceforge.io/) with optional [Oh My Zsh](https://ohmyz.sh/) `git`, `gh`, and `bun` plugins plus [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions), installed by `./scripts/install.sh --packages`.
 - [Visual Studio Code](https://code.visualstudio.com/docs) and [Nano](https://www.nano-editor.org/docs.php).
 
 ### AI and agent tools
