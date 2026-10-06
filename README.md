@@ -4,11 +4,11 @@ Portable Linux shell and Git settings for Arch and Debian/Ubuntu.
 
 ```sh
 ./scripts/install.sh           # link .zshrc and .gitconfig; back up replaced files
-./scripts/install.sh --packages # install system packages, Aikido Safe Chain, Bun, and Composer
+./scripts/install.sh --packages # install system packages, Aikido Safe Chain, Bun, PHPVM, and Composer
 ./scripts/check-packages.sh    # check distro packages and README binaries; print versions
 ```
 
-The `--packages` option installs packages from the [Arch package list](packages/arch.txt) or [Debian/Ubuntu package list](packages/debian.txt) using `pacman` or `apt-get`, then runs the separate installers for [Aikido Safe Chain](scripts/installers/aikido.sh), [Bun](scripts/installers/bun.sh), and [Composer](scripts/installers/composer.sh). Bun and Composer installers follow their respective [official installation references](https://bun.com/docs/installation) and [Composer instructions](https://getcomposer.org/doc/faqs/how-to-install-composer-programmatically.md). Composer requires an active PHP CLI, such as a version selected with PHPVM.
+The `--packages` option installs packages from the [Arch package list](packages/arch.txt) or [Debian/Ubuntu package list](packages/debian.txt) using `pacman` or `apt-get`, then runs the separate installers for [Aikido Safe Chain](scripts/installers/aikido.sh), [Bun](scripts/installers/bun.sh), [PHPVM](scripts/installers/phpvm.sh), and [Composer](scripts/installers/composer.sh). Their installation references are [Aikido](https://github.com/AikidoSec/safe-chain), [Bun](https://bun.com/docs/installation), [PHPVM](https://github.com/Thavarshan/phpvm), and [Composer](https://getcomposer.org/doc/faqs/how-to-install-composer-programmatically.md). PHPVM installs and selects the newest PHP version available from the system package manager before Composer runs.
 
 Manage PHP versions with PHPVM and install Composer for the active PHPVM version. Oh My Zsh, Bun, and PHPVM are optional and load from their usual `$HOME` locations. VS Code is preferred when `code` is available; otherwise the editor is Nano.
 

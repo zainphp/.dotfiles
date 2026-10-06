@@ -33,7 +33,12 @@ export VISUAL="$EDITOR"
 dotfiles_dir="${${(%):-%x}:A:h}"
 [[ -r "$dotfiles_dir/zsh/paths.zsh" ]] && source "$dotfiles_dir/zsh/paths.zsh"
 [[ -s "$BUN_INSTALL/_bun" ]] && source "$BUN_INSTALL/_bun"
-[[ -s "$PHPVM_DIR/phpvm.sh" ]] && source "$PHPVM_DIR/phpvm.sh"
+if [[ -s "$PHPVM_DIR/phpvm.sh" ]]; then
+  # PHPVM uses Bash syntax; delegate commands instead of sourcing it into Zsh.
+  phpvm() {
+    PHPVM_DIR="$PHPVM_DIR" command bash -c 'source "$PHPVM_DIR/phpvm.sh" && phpvm "$@"' phpvm "$@"
+  }
+fi
 
 # Personal commands
 [[ -r "$dotfiles_dir/zsh/aliases.zsh" ]] && source "$dotfiles_dir/zsh/aliases.zsh"

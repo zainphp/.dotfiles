@@ -5,6 +5,8 @@ repo_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 tmp_home=$(mktemp -d)
 trap 'rm -rf "$tmp_home"' 0
 trap 'exit 1' HUP INT TERM
+PHPVM_DIR="$tmp_home/.phpvm"
+export PHPVM_DIR
 
 printf 'old zsh config\n' > "$tmp_home/.zshrc"
 printf 'old git config\n' > "$tmp_home/.gitconfig"
@@ -55,7 +57,10 @@ printf 'Composer version 2.8.0\n'
 EOF
 cat > "$tmp_home/.phpvm/bin/phpvm" <<'EOF'
 #!/bin/sh
-printf 'phpvm 1.0\n'
+printf '%s\n' "$*" >> "${PHPVM_TEST_LOG:-/dev/null}"
+if [ "${1:-}" = '--version' ]; then
+  printf 'phpvm 1.0\n'
+fi
 EOF
 cat > "$tmp_home/.config/composer/vendor/bin/laravel" <<'EOF'
 #!/bin/sh
@@ -78,11 +83,14 @@ chmod +x "$tmp_home/mock-bin/pacman" "$tmp_home/mock-bin/sudo" \
   "$tmp_home/.phpvm/bin/phpvm" "$tmp_home/.config/composer/vendor/bin/laravel" \
   "$tmp_home/.bun/bin/sentry-mcp"
 output=$(PATH="$tmp_home/mock-bin:$PATH" HOME="$tmp_home" BUN_INSTALL="$tmp_home/.bun" \
-  PACKAGE_TEST_LOG="$tmp_home/pacman.log" "$repo_dir/scripts/install.sh" --packages)
+  PHPVM_TEST_LOG="$tmp_home/phpvm-package.log" PACKAGE_TEST_LOG="$tmp_home/pacman.log" \
+  "$repo_dir/scripts/install.sh" --packages)
 case "$output" in
-  *'Aikido Safe Chain is already installed; skipping.'*'Bun is already installed; skipping.'*'Composer is already installed; skipping.'*) ;;
+  *'Aikido Safe Chain is already installed; skipping.'*'Bun is already installed; skipping.'*'PHPVM is already installed; skipping manager installation.'*'Composer is already installed; skipping.'*) ;;
   *) printf 'per-tool installers were not all run\n' >&2; exit 1 ;;
 esac
+[ "$(sed -n '1p' "$tmp_home/phpvm-package.log")" = 'install latest-remote' ]
+[ "$(sed -n '2p' "$tmp_home/phpvm-package.log")" = 'use latest' ]
 case "$(cat "$tmp_home/pacman.log")" in
   '-S --needed '*) ;;
   *) exit 1 ;;
@@ -190,5 +198,38 @@ case "$output" in
   *'optional missing: code'*'All required packages and binaries are installed.'*) ;;
   *) printf 'package checker treated an optional binary as required\n' >&2; exit 1 ;;
 esac
+
+# A fresh PHPVM install must not append upstream shell setup to the user's Zsh config.
+phpvm_home="$tmp_home/phpvm-home"
+phpvm_mock_bin="$tmp_home/phpvm-mock-bin"
+mkdir -p "$phpvm_home" "$phpvm_mock_bin"
+printf 'keep this zsh config\n' > "$phpvm_home/.zshrc"
+cat > "$phpvm_mock_bin/curl" <<'EOF'
+#!/bin/sh
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = '-o' ]; then
+    installer=$2
+    break
+  fi
+  shift
+done
+cat > "$installer" <<'INSTALLER'
+#!/bin/sh
+[ "$PROFILE" != "$HOME/.zshrc" ] || exit 1
+mkdir -p "$PHPVM_DIR/bin"
+cat > "$PHPVM_DIR/bin/phpvm" <<'PHPVM'
+#!/bin/sh
+printf '%s\n' "$*" >> "$PHPVM_TEST_LOG"
+PHPVM
+chmod +x "$PHPVM_DIR/bin/phpvm"
+printf 'upstream profile change\n' >> "$PROFILE"
+INSTALLER
+EOF
+chmod +x "$phpvm_mock_bin/curl"
+PATH="$phpvm_mock_bin:/usr/bin:/bin" HOME="$phpvm_home" PHPVM_DIR="$phpvm_home/.phpvm" \
+  PHPVM_TEST_LOG="$phpvm_home/phpvm.log" "$repo_dir/scripts/installers/phpvm.sh"
+[ "$(cat "$phpvm_home/.zshrc")" = 'keep this zsh config' ]
+[ "$(sed -n '1p' "$phpvm_home/phpvm.log")" = 'install latest-remote' ]
+[ "$(sed -n '2p' "$phpvm_home/phpvm.log")" = 'use latest' ]
 
 printf 'installer checks passed\n'
