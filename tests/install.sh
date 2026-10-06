@@ -364,18 +364,27 @@ chmod +x "$download_bin/wget"
 bootstrap_git_mock="$tmp_home/bootstrap-git"
 cat > "$bootstrap_git_mock" <<'GIT'
 #!/bin/sh
-[ "$1" = clone ] && [ "$2" = 'https://github.com/zainphp/.dotfiles.git' ] || exit 1
-printf 'clone\n' >> "$BOOTSTRAP_MARKER"
-mkdir -p "$3/.git" "$3/scripts"
-cat > "$3/scripts/install-packages.sh" <<'PACKAGES'
+case "$1" in
+  clone)
+    [ "$2" = 'https://github.com/zainphp/.dotfiles.git' ] || exit 1
+    printf 'clone\n' >> "$BOOTSTRAP_MARKER"
+    mkdir -p "$3/.git" "$3/scripts"
+    cat > "$3/scripts/install-packages.sh" <<'PACKAGES'
 #!/bin/sh
 printf 'packages\n' >> "$BOOTSTRAP_MARKER"
 PACKAGES
-cat > "$3/scripts/symlink-dotfiles.sh" <<'LINKER'
+    cat > "$3/scripts/symlink-dotfiles.sh" <<'LINKER'
 #!/bin/sh
 printf 'link\n' >> "$BOOTSTRAP_MARKER"
 LINKER
-chmod +x "$3/scripts/install-packages.sh" "$3/scripts/symlink-dotfiles.sh"
+    chmod +x "$3/scripts/install-packages.sh" "$3/scripts/symlink-dotfiles.sh"
+    ;;
+  -C)
+    [ "$2" = "$HOME/.dotfiles" ] && [ "$3" = pull ] && [ "$4" = --ff-only ] || exit 1
+    printf 'pull\n' >> "$BOOTSTRAP_MARKER"
+    ;;
+  *) exit 1 ;;
+esac
 GIT
 
 setup_bootstrap_bin() {
@@ -435,6 +444,14 @@ for package_manager in pacman apt-get; do
     *"$bootstrap_home/.dotfiles/scripts/check-packages.sh"*) ;;
     *) printf 'bootstrap did not suggest checking packages\n' >&2; exit 1 ;;
   esac
+
+  : > "$bootstrap_home/result"
+  bootstrap_output=$(PATH="$bootstrap_bin" HOME="$bootstrap_home" \
+    BOOTSTRAP_BIN="$bootstrap_bin" BOOTSTRAP_GIT_MOCK="$bootstrap_git_mock" \
+    BOOTSTRAP_MARKER="$bootstrap_home/result" "$repo_dir/scripts/bootstrap.sh")
+  [ "$(sed -n '1p' "$bootstrap_home/result")" = pull ]
+  [ "$(sed -n '2p' "$bootstrap_home/result")" = packages ]
+  [ "$(sed -n '3p' "$bootstrap_home/result")" = link ]
 done
 
 conflict_home="$tmp_home/conflict-home"

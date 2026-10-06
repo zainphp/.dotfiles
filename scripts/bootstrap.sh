@@ -16,18 +16,23 @@ if [ -e "$dotfiles_dir" ] || [ -L "$dotfiles_dir" ]; then
     printf '%s exists but is not a Git checkout; move it and retry.\n' "$dotfiles_dir" >&2
     exit 1
   fi
-else
-  if ! command -v git >/dev/null 2>&1; then
-    if command -v pacman >/dev/null 2>&1; then
-      as_root pacman -S --needed --noconfirm git
-    elif command -v apt-get >/dev/null 2>&1; then
-      as_root apt-get update
-      as_root apt-get install --yes git
-    else
-      printf 'Unsupported package manager; install Git, then rerun this bootstrap.\n' >&2
-      exit 1
-    fi
+fi
+
+if ! command -v git >/dev/null 2>&1; then
+  if command -v pacman >/dev/null 2>&1; then
+    as_root pacman -S --needed --noconfirm git
+  elif command -v apt-get >/dev/null 2>&1; then
+    as_root apt-get update
+    as_root apt-get install --yes git
+  else
+    printf 'Unsupported package manager; install Git, then rerun this bootstrap.\n' >&2
+    exit 1
   fi
+fi
+
+if [ -e "$dotfiles_dir/.git" ]; then
+  git -C "$dotfiles_dir" pull --ff-only
+else
   git clone https://github.com/zainphp/.dotfiles.git "$dotfiles_dir"
 fi
 
