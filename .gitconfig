@@ -1,0 +1,14 @@
+[user]
+	name = 🍕
+	email = zainadam.id@gmail.com
+	signingkey = ~/.ssh/git_commit_sign.pub
+[credential "https://github.com"]
+	helper =
+	helper = !gh auth git-credential
+[credential "https://gist.github.com"]
+	helper =
+	helper = !gh auth git-credential
+[gpg]
+	format = ssh
+[commit]
+	gpgsign = true

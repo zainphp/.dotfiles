@@ -1,0 +1,11 @@
+btop
+gh
+git
+nano
+openssh-client
+python3
+ripgrep
+unzip
+curl
+zsh-autosuggestions
+zsh
