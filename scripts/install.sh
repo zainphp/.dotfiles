@@ -35,7 +35,7 @@ case "${1:-}" in
   -h|--help)
     printf 'Usage: %s [--packages]\n' "$0"
     printf 'Default: link dotfiles and back up replaced files.\n'
-    printf '%s\n' '--packages: install system packages and Aikido Safe Chain.'
+    printf '%s\n' '--packages: install system packages, Aikido Safe Chain, Bun, and Composer.'
     ;;
   *)
     printf 'Usage: %s [--packages]\n' "$0" >&2

@@ -4,10 +4,11 @@ Portable Linux shell and Git settings for Arch and Debian/Ubuntu.
 
 ```sh
 ./scripts/install.sh           # link .zshrc and .gitconfig; back up replaced files
-./scripts/install.sh --packages # install system packages and Aikido Safe Chain
+./scripts/install.sh --packages # install system packages, Aikido Safe Chain, Bun, and Composer
+./scripts/check-packages.sh    # check distro packages and README binaries; print versions
 ```
 
-The `--packages` option installs packages from the [Arch package list](packages/arch.txt) or [Debian/Ubuntu package list](packages/debian.txt) using `pacman` or `apt-get`, then installs Aikido Safe Chain with its checksum-verified upstream installer.
+The `--packages` option installs packages from the [Arch package list](packages/arch.txt) or [Debian/Ubuntu package list](packages/debian.txt) using `pacman` or `apt-get`, then runs the separate installers for [Aikido Safe Chain](scripts/installers/aikido.sh), [Bun](scripts/installers/bun.sh), and [Composer](scripts/installers/composer.sh). Bun and Composer installers follow their respective [official installation references](https://bun.com/docs/installation) and [Composer instructions](https://getcomposer.org/doc/faqs/how-to-install-composer-programmatically.md). Composer requires an active PHP CLI, such as a version selected with PHPVM.
 
 Manage PHP versions with PHPVM and install Composer for the active PHPVM version. Oh My Zsh, Bun, and PHPVM are optional and load from their usual `$HOME` locations. VS Code is preferred when `code` is available; otherwise the editor is Nano.
 
@@ -33,7 +34,7 @@ In a trusted project, run `project-path` from its root to add existing `node_mod
 
 ### Development tools and runtimes
 
-- [Bun](https://bun.sh/docs) is the main JavaScript runtime and package manager.
+- [Bun](https://bun.com/docs) is the main JavaScript runtime and package manager.
   - Global package: [`@sentry/mcp-server`](https://github.com/getsentry/sentry-mcp).
 - [PHP](https://www.php.net/) with [phpvm](https://github.com/Thavarshan/phpvm).
 - [Composer](https://getcomposer.org/doc/) manages PHP packages.
