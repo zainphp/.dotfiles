@@ -42,4 +42,29 @@ case "$(cat "$tmp_home/pacman.log")" in
   *) exit 1 ;;
 esac
 
+apt_mock_bin="$tmp_home/apt-mock-bin"
+mkdir -p "$apt_mock_bin"
+ln -s "$(command -v dirname)" "$apt_mock_bin/dirname"
+cat > "$apt_mock_bin/id" <<'EOF'
+#!/bin/sh
+printf '0\n'
+EOF
+cat > "$apt_mock_bin/apt-get" <<'EOF'
+#!/bin/sh
+printf '%s\n' "$*" >> "$PACKAGE_TEST_LOG"
+EOF
+cat > "$apt_mock_bin/safe-chain" <<'EOF'
+#!/bin/sh
+exit 0
+EOF
+chmod +x "$apt_mock_bin/id" "$apt_mock_bin/apt-get" "$apt_mock_bin/safe-chain"
+: > "$tmp_home/apt.log"
+PATH="$apt_mock_bin" HOME="$tmp_home" PACKAGE_TEST_LOG="$tmp_home/apt.log" \
+  "$repo_dir/scripts/install.sh" --packages
+[ "$(sed -n '1p' "$tmp_home/apt.log")" = update ]
+case " $(sed -n '2p' "$tmp_home/apt.log") " in
+  *' sqlite3 '*) ;;
+  *) printf 'Debian package list was not passed to apt-get\n' >&2; exit 1 ;;
+esac
+
 printf 'installer checks passed\n'

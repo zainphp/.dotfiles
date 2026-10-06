@@ -15,6 +15,8 @@ GitHub authentication uses GitHub CLI (`gh auth login`). Keep credentials and pr
 
 For local environment variables, add exports to the ignored `.zshrc.local` file. It is sourced by `.zshrc` and is not committed.
 
+In a trusted project, run `project-path` from its root to add existing `node_modules/.bin` and `vendor/bin` directories to the current shell's `PATH`.
+
 ## Apps
 
 ### Shell and editors
@@ -56,6 +58,6 @@ Keep these out of Git. `./scripts/backup.sh` archives these locations; the archi
 
 Do not commit `.env` files, private keys, or login tokens. `scripts/backup.sh` excludes `~/.codex/auth.json`; sign in again with Codex and `gh auth login` after reinstalling.
 
-Run `./scripts/backup.sh` before reinstalling Linux. It saves projects, SSH keys, Zsh state, this dotfiles repo (including `.zshrc.local`), and Codex sessions and memories to the ignored `./backups/` directory and prints the archive's full path. Pass another destination directory or set `DOTFILES_BACKUP_DIR` to use a mounted drive for reinstall backups. Close Codex first. The archive contains private keys, shell records, and project data; keep it private. Reinstallable Codex packages/plugins and `auth.json` are excluded.
+Run `./scripts/backup.sh` before reinstalling Linux. It saves projects, SSH keys, Zsh state, this dotfiles repo (including `.zshrc.local`), and Codex sessions and memories to the ignored `./backups/` directory and prints the archive's full path. Pass another destination directory or set `DOTFILES_BACKUP_DIR` to use a mounted drive for reinstall backups. Close Codex first. The archive contains private keys, shell records, and project data; keep it private. Reinstallable Codex packages/plugins, temporary files, and `auth.json` are excluded.
 
 Restore the newest archive with `./scripts/restore.sh`; pass an archive path to choose a specific backup. The script asks before restoring because existing files may be overwritten; use `--yes` to confirm non-interactively.

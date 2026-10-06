@@ -7,12 +7,17 @@ trap 'rm -rf -- "$tmp_root"' EXIT
 tmp_home="$tmp_root/home"
 mock_bin="$tmp_root/bin"
 backup_script="$tmp_home/.dotfiles/scripts/backup.sh"
-mkdir -p "$tmp_home/.dotfiles/scripts" "$tmp_home/.ssh" "$tmp_home/projects" "$tmp_home/.codex" "$mock_bin"
+mkdir -p "$tmp_home/.dotfiles/scripts" "$tmp_home/.ssh" "$tmp_home/projects" \
+  "$tmp_home/.codex/packages" "$tmp_home/.codex/plugins" "$tmp_home/.codex/.tmp" "$mock_bin"
 cp "$repo_dir/scripts/backup.sh" "$backup_script"
 chmod +x "$backup_script"
 printf 'test key\n' > "$tmp_home/.ssh/id_test"
 printf 'before\n' > "$tmp_home/projects/data"
 printf 'codex data\n' > "$tmp_home/.codex/session.jsonl"
+printf 'auth token\n' > "$tmp_home/.codex/auth.json"
+printf 'installed package\n' > "$tmp_home/.codex/packages/package.json"
+printf 'installed plugin\n' > "$tmp_home/.codex/plugins/plugin.json"
+printf 'temporary data\n' > "$tmp_home/.codex/.tmp/data"
 
 cat > "$mock_bin/date" <<'EOF'
 #!/bin/sh
@@ -40,6 +45,12 @@ fi
 backup_dir="$tmp_home/backups"
 output=$(run_backup "$backup_dir")
 [[ $output == "Backup created: $backup_dir/"* ]]
+archive=${output#'Backup created: '}
+if tar -tzf "$archive" | grep -Eq '^\.codex/(auth\.json|packages(/|$)|plugins(/|$)|\.tmp(/|$))'; then
+  printf 'backup archive included excluded Codex files\n' >&2
+  exit 1
+fi
+tar -tzf "$archive" | grep -Fx '.codex/session.jsonl' >/dev/null
 printf 'after\n' > "$tmp_home/projects/data"
 run_backup "$backup_dir" >/dev/null
 
