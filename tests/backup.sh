@@ -32,13 +32,14 @@ if run_backup "$tmp_home/projects/backups" >/dev/null 2>&1; then
   printf 'backup accepted a destination inside projects\n' >&2
   exit 1
 fi
-if run_backup "$tmp_home/.dotfiles/backups" >/dev/null 2>&1; then
-  printf 'backup accepted a destination inside the dotfiles tree\n' >&2
+if run_backup "$tmp_home/.dotfiles" >/dev/null 2>&1; then
+  printf 'backup accepted the dotfiles repository as its destination\n' >&2
   exit 1
 fi
 
 backup_dir="$tmp_home/backups"
-run_backup "$backup_dir" >/dev/null
+output=$(run_backup "$backup_dir")
+[[ $output == "Backup created: $backup_dir/"* ]]
 printf 'after\n' > "$tmp_home/projects/data"
 run_backup "$backup_dir" >/dev/null
 
@@ -48,5 +49,30 @@ archives=("$backup_dir"/*.tar.gz)
 first=$(tar -xOzf "${archives[0]}" projects/data)
 second=$(tar -xOzf "${archives[1]}" projects/data)
 [[ "$first:$second" == 'before:after' || "$first:$second" == 'after:before' ]]
+
+default_backup_dir="$tmp_home/.dotfiles/backups"
+output=$(run_backup)
+[[ $output == "Backup created: $default_backup_dir/"* ]]
+run_backup >/dev/null
+archives=("$default_backup_dir"/*.tar.gz)
+[[ ${#archives[@]} -eq 2 ]]
+for archive in "${archives[@]}"; do
+  if tar -tzf "$archive" | grep -F '.dotfiles/backups/' >/dev/null; then
+    printf 'backup archive included older backups\n' >&2
+    exit 1
+  fi
+done
+
+nested_repo="$tmp_home/projects/dotfiles"
+mkdir -p "$nested_repo/scripts"
+cp "$repo_dir/scripts/backup.sh" "$nested_repo/scripts/backup.sh"
+chmod +x "$nested_repo/scripts/backup.sh"
+output=$(PATH="$mock_bin:$PATH" HOME="$tmp_home" "$nested_repo/scripts/backup.sh")
+[[ $output == "Backup created: $nested_repo/backups/"* ]]
+nested_archive=${output#'Backup created: '}
+if tar -tzf "$nested_archive" | grep -F 'projects/dotfiles/backups/' >/dev/null; then
+  printf 'nested repository backup included its own backups\n' >&2
+  exit 1
+fi
 
 printf 'backup checks passed\n'

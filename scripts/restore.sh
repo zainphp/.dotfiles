@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-backup_dir=${DOTFILES_BACKUP_DIR:-/mnt/c/Users/addam/Backups}
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
+repo_dir=$(cd -- "$script_dir/.." && pwd -P)
+backup_dir=${DOTFILES_BACKUP_DIR:-$repo_dir/backups}
 archive=
 assume_yes=0
 

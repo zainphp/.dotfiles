@@ -19,7 +19,7 @@ if [[ $repo_dir != "$home_dir/"* ]]; then
   exit 1
 fi
 dotfiles_path=${repo_dir#"$home_dir"/}
-backup_dir=${1:-${DOTFILES_BACKUP_DIR:-/mnt/c/Users/addam/Backups}}
+backup_dir=${1:-${DOTFILES_BACKUP_DIR:-$repo_dir/backups}}
 
 if command -v pgrep >/dev/null 2>&1 && pgrep -x codex >/dev/null 2>&1; then
   printf 'Close Codex before backing up its history databases.\n' >&2
@@ -31,6 +31,9 @@ backup_dir=$(cd -- "$backup_dir" && pwd -P)
 for included_dir in "$home_dir/projects" "$repo_dir"; do
   if [[ -d "$included_dir" ]]; then
     included_dir=$(cd -- "$included_dir" && pwd -P)
+    case "$backup_dir/" in
+      "$repo_dir/backups/"*) continue ;;
+    esac
     case "$backup_dir/" in
       "$included_dir/"*)
         printf 'Choose a backup directory outside %s.\n' "$included_dir" >&2
@@ -48,10 +51,11 @@ for path in .ssh projects .codex .zsh_history; do
 done
 
 tar -czf "$archive" \
+  --exclude="$dotfiles_path/backups" \
   --exclude='.codex/packages' \
   --exclude='.codex/plugins' \
   --exclude='.codex/.tmp' \
   --exclude='.codex/auth.json' \
   -C "$home_dir" "${backup_paths[@]}"
 
-printf 'Created %s\n' "$archive"
+printf 'Backup created: %s\n' "$archive"

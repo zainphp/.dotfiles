@@ -40,4 +40,13 @@ HOME="$restore_home" DOTFILES_BACKUP_DIR="$backup_dir" \
 [[ $(<"$restore_home/dotfiles/.zshrc.local") == 'local config' ]]
 [[ $(<"$restore_home/.zsh_history") == 'shell history' ]]
 
+default_repo="$tmp_root/default-dotfiles"
+default_home="$tmp_root/default-home"
+mkdir -p "$default_repo/scripts" "$default_repo/backups" "$default_home"
+cp "$repo_dir/scripts/restore.sh" "$default_repo/scripts/restore.sh"
+cp "$archive" "$default_repo/backups/"
+env -u DOTFILES_BACKUP_DIR HOME="$default_home" \
+  "$default_repo/scripts/restore.sh" --yes >/dev/null
+[[ $(<"$default_home/projects/demo/data") == 'project data' ]]
+
 printf 'restore checks passed\n'
