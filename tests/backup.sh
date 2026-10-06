@@ -3,7 +3,8 @@ set -euo pipefail
 
 repo_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
 tmp_root=$(mktemp -d)
-trap 'rm -rf -- "$tmp_root"' EXIT
+lock_pid=
+trap 'if [[ -n $lock_pid ]]; then kill "$lock_pid" 2>/dev/null || :; wait "$lock_pid" 2>/dev/null || :; fi; rm -rf -- "$tmp_root"' EXIT
 tmp_home="$tmp_root/home"
 mock_bin="$tmp_root/bin"
 backup_script="$tmp_home/.dotfiles/scripts/backup.sh"
@@ -25,7 +26,11 @@ printf '2026-10-06_12-34-56\n'
 EOF
 cat > "$mock_bin/pgrep" <<'EOF'
 #!/bin/sh
-exit 1
+case "${PGREP_MODE:-}" in
+  app-server) printf '123 /usr/bin/codex app-server --managed-daemon\n' ;;
+  active) printf '123 codex resume --yolo\n' ;;
+  *) exit 1 ;;
+esac
 EOF
 chmod +x "$mock_bin/date" "$mock_bin/pgrep"
 
@@ -43,6 +48,36 @@ if run_backup "$tmp_home/.dotfiles" >/dev/null 2>&1; then
 fi
 
 backup_dir="$tmp_home/backups"
+if output=$(PGREP_MODE=active run_backup "$backup_dir" 2>&1); then
+  printf 'backup accepted an active Codex CLI process\n' >&2
+  exit 1
+fi
+[[ $output == *'Close Codex before backing up its history databases.'* ]]
+output=$(PGREP_MODE=app-server run_backup "$backup_dir")
+[[ $output == "Backup created: $backup_dir/"* ]]
+rm -- "${output#'Backup created: '}"
+lock_file="$tmp_home/.codex/thread-writer-locks/active-thread.lock"
+mkdir -p "${lock_file%/*}"
+: > "$lock_file"
+flock -n -F "$lock_file" sleep 30 &
+lock_pid=$!
+lock_acquired=
+for attempt in {1..100}; do
+  if ! flock -n "$lock_file" true; then
+    lock_acquired=yes
+    break
+  fi
+  sleep .01
+done
+[[ $lock_acquired == yes ]]
+if output=$(PGREP_MODE=app-server run_backup "$backup_dir" 2>&1); then
+  printf 'backup accepted active Codex app-server work\n' >&2
+  exit 1
+fi
+[[ $output == *'Close Codex before backing up its history databases.'* ]]
+kill "$lock_pid"
+wait "$lock_pid" 2>/dev/null || :
+lock_pid=
 output=$(run_backup "$backup_dir")
 [[ $output == "Backup created: $backup_dir/"* ]]
 archive=${output#'Backup created: '}

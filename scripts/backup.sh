@@ -21,9 +21,25 @@ fi
 dotfiles_path=${repo_dir#"$home_dir"/}
 backup_dir=${1:-${DOTFILES_BACKUP_DIR:-$repo_dir/backups}}
 
-if command -v pgrep >/dev/null 2>&1 && pgrep -x codex >/dev/null 2>&1; then
+if command -v pgrep >/dev/null 2>&1 &&
+  pgrep -a -x codex | grep -vF 'codex app-server' >/dev/null; then
   printf 'Close Codex before backing up its history databases.\n' >&2
   exit 1
+fi
+# ponytail: relies on Codex's internal lock directory; use a supported API if one appears.
+codex_locks="$home_dir/.codex/thread-writer-locks"
+if [[ -d $codex_locks ]]; then
+  if ! command -v flock >/dev/null 2>&1; then
+    printf 'Cannot check Codex history locks without flock; install util-linux before backing up.\n' >&2
+    exit 1
+  fi
+  for lock in "$codex_locks"/*.lock; do
+    [[ -e $lock ]] || continue
+    if ! flock -n "$lock" true; then
+      printf 'Close Codex before backing up its history databases.\n' >&2
+      exit 1
+    fi
+  done
 fi
 
 mkdir -p -- "$backup_dir"
