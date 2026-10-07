@@ -5,6 +5,9 @@ on:
   schedule:
     - cron: '0 0 * * 1' # Every Monday
 
+permissions:
+  contents: read
+
 jobs:
   moat-audit:
     uses: zainphp/moat-audit/.github/workflows/moat-audit.yml@main
