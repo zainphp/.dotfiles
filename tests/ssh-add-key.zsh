@@ -12,6 +12,11 @@ trap 'rm -rf -- "$tmp_root"' EXIT
 
 mkdir -p "$tmp_home/.ssh" "$mock_bin"
 printf 'private key placeholder\n' > "$tmp_home/.ssh/testkey"
+printf 'another private key\n' > "$tmp_home/.ssh/otherkey"
+printf 'public key\n' > "$tmp_home/.ssh/testkey.pub"
+printf 'host config\n' > "$tmp_home/.ssh/config"
+printf 'known host\n' > "$tmp_home/.ssh/known_hosts"
+printf 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIlegacy authorized key\n' > "$tmp_home/.ssh/authorized_keys2"
 
 stale_socket="$tmp_root/stale-agent.sock"
 : > "$stale_socket"
@@ -73,6 +78,28 @@ run_ssh_add_key "$stale_socket"
 
 : > "$ssh_add_log"
 run_ssh_add_key ''
+[[ "$(cat "$ssh_add_log")" == "$fresh_socket|$tmp_home/.ssh/testkey" ]]
+
+: > "$ssh_add_log"
+selection_output=$(printf '2\n' | env \
+  HOME="$tmp_home" \
+  USER="${USER:-$(id -un)}" \
+  PATH="$mock_bin:$PATH" \
+  FRESH_SOCKET="$fresh_socket" \
+  SSH_ADD_LOG="$ssh_add_log" \
+  SSH_ADD_KEY_FILE="$repo_dir/zsh/helpers/ssh-add-key.zsh" \
+  zsh -f -c 'source "$SSH_ADD_KEY_FILE"; ssh-add-key' 2>&1) || {
+    print -u2 -- "$selection_output"
+    exit 1
+  }
+[[ "$selection_output" == *'Available SSH keys:'*'otherkey'*'testkey'* ]] || {
+  print -u2 -- 'SSH key picker did not list the private keys'
+  exit 1
+}
+[[ "$selection_output" != *'testkey.pub'* && "$selection_output" != *'known_hosts'* && "$selection_output" != *'config'* && "$selection_output" != *'authorized_keys2'* ]] || {
+  print -u2 -- 'SSH key picker listed SSH metadata or a public key'
+  exit 1
+}
 [[ "$(cat "$ssh_add_log")" == "$fresh_socket|$tmp_home/.ssh/testkey" ]]
 
 : > "$ssh_add_log"

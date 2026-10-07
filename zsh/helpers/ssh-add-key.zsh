@@ -1,12 +1,34 @@
 ssh-add-key() {
-  if [[ -z "${1:-}" ]]; then
-    print -u2 'Usage: ssh-add-key key-filename'
-    return 1
+  local ssh_key key_name candidate
+  if [[ -n "${1:-}" ]]; then
+    key_name=$1
+  else
+    local -a keys
+    for candidate in "$HOME"/.ssh/*(N); do
+      [[ -f "$candidate" && -r "$candidate" ]] || continue
+      key_name=${candidate:t}
+      case "$key_name" in
+        *.pub|config|known_hosts*|authorized_keys|authorized_keys2|environment|rc) continue ;;
+      esac
+      keys+=("$key_name")
+    done
+
+    if (( ! ${#keys} )); then
+      print -u2 'No SSH private keys found in ~/.ssh.'
+      return 1
+    fi
+
+    print 'Available SSH keys:'
+    local PS3='Select a key number: '
+    select key_name in "${keys[@]}"; do
+      [[ -n "$key_name" ]] && break
+      print -u2 'Choose a listed key number.'
+    done
   fi
 
-  local ssh_key="$HOME/.ssh/$1"
+  ssh_key="$HOME/.ssh/$key_name"
   if [[ ! -f "$ssh_key" ]]; then
-    print -u2 "Private key not found: $1"
+    print -u2 "Private key not found: $key_name"
     return 1
   fi
 
@@ -41,7 +63,7 @@ ssh-add-key() {
   local fingerprint
   fingerprint=$(ssh-keygen -lf "$ssh_key" 2>/dev/null | awk '{print $2}')
   if [[ -z "$fingerprint" ]]; then
-    print -u2 "Could not read key fingerprint: $1"
+    print -u2 "Could not read key fingerprint: $key_name"
     return 1
   fi
   if ! ssh-add -l 2>/dev/null | grep -Fq "$fingerprint"; then
