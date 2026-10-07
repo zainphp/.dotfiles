@@ -21,27 +21,6 @@ fi
 dotfiles_path=${repo_dir#"$home_dir"/}
 backup_dir=${1:-${DOTFILES_BACKUP_DIR:-$repo_dir/backups}}
 
-if command -v pgrep >/dev/null 2>&1 &&
-  pgrep -a -x codex | grep -vF 'codex app-server' >/dev/null; then
-  printf 'Close Codex before backing up its history databases.\n' >&2
-  exit 1
-fi
-# ponytail: relies on Codex's internal lock directory; use a supported API if one appears.
-codex_locks="$home_dir/.codex/thread-writer-locks"
-if [[ -d $codex_locks ]]; then
-  if ! command -v flock >/dev/null 2>&1; then
-    printf 'Cannot check Codex history locks without flock; install util-linux before backing up.\n' >&2
-    exit 1
-  fi
-  for lock in "$codex_locks"/*.lock; do
-    [[ -e $lock ]] || continue
-    if ! flock -n "$lock" true; then
-      printf 'Close Codex before backing up its history databases.\n' >&2
-      exit 1
-    fi
-  done
-fi
-
 mkdir -p -- "$backup_dir"
 backup_dir=$(cd -- "$backup_dir" && pwd -P)
 for included_dir in "$home_dir/projects" "$repo_dir"; do
@@ -59,19 +38,58 @@ for included_dir in "$home_dir/projects" "$repo_dir"; do
   fi
 done
 
-archive=$(mktemp --tmpdir="$backup_dir" --suffix=.tar.gz \
-  "important-files-$(date +%Y-%m-%d_%H-%M-%S)-XXXXXX")
-backup_paths=("$dotfiles_path")
-for path in .ssh projects .codex .zsh_history; do
+backup_locations=(
+  "$dotfiles_path/.zshrc.local"
+  .ssh
+  .gnupg
+  projects
+  .codex
+  .zsh_history
+)
+backup_paths=()
+for path in "${backup_locations[@]}"; do
   [[ -e "$home_dir/$path" ]] && backup_paths+=("$path")
 done
 
-tar -czf "$archive" \
-  --exclude="$dotfiles_path/backups" \
-  --exclude='.codex/packages' \
-  --exclude='.codex/plugins' \
-  --exclude='.codex/.tmp' \
-  --exclude='.codex/auth.json' \
-  -C "$home_dir" "${backup_paths[@]}"
+# Shared by the estimate and archive so both use the same exclusions.
+backup_excludes=(
+  # Prevent the default archive from being included in future archives.
+  "--exclude=$dotfiles_path/backups"
+
+  # Reinstallable project dependencies and generated output.
+  '--exclude=node_modules'
+  '--exclude=vendor'
+  '--exclude=.next'
+  '--exclude=build'
+  '--exclude=dist'
+
+  # Reinstallable Codex data and credentials that can be recreated by signing in.
+  '--exclude=.codex/packages'
+  '--exclude=.codex/plugins'
+  '--exclude=.codex/.tmp'
+  '--exclude=.codex/auth.json'
+)
+printf 'Close other apps that may be changing files; Codex will be asked to close after confirmation. Live app data may be incomplete.\n' >&2
+estimated_size=$(
+  cd "$home_dir"
+  du -sch --apparent-size "${backup_excludes[@]}" "${backup_paths[@]}" |
+    awk 'END { print $1 }'
+)
+printf 'Estimated source size: %s (before compression).\n' "$estimated_size" >&2
+printf 'Continue with backup? [y/N] ' >&2
+if ! IFS= read -r answer; then answer=; fi
+case "$answer" in
+  [yY]|[yY][eE][sS]) ;;
+  *) printf 'Backup cancelled.\n' >&2; exit 1 ;;
+esac
+
+"$script_dir/close-codex.sh"
+archive=$(mktemp --tmpdir="$backup_dir" --suffix=.tar.gz \
+  "important-files-$(date +%Y-%m-%d_%H-%M-%S)-XXXXXX")
+printf 'Creating archive (one dot per ~10 MiB): ' >&2
+tar -czf "$archive" --checkpoint=1024 --checkpoint-action=dot \
+  "${backup_excludes[@]}" \
+  -C "$home_dir" "${backup_paths[@]}" >&2
+printf ' done\n' >&2
 
 printf 'Backup created: %s\n' "$archive"
