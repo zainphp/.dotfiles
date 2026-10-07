@@ -123,8 +123,18 @@ output=$(PATH="$tmp_home/mock-bin:$PATH" HOME="$tmp_home" BUN_INSTALL="$tmp_home
   PHPVM_TEST_LOG="$tmp_home/phpvm-package.log" PACKAGE_TEST_LOG="$tmp_home/pacman.log" \
   "$repo_dir/scripts/install-packages.sh")
 case "$output" in
-  *'[1/7] System packages (pacman) (0%)'*'[1/7] System packages (pacman) (100%)'*'[2/7] Aikido Safe Chain (0%)'*'[2/7] Aikido Safe Chain (100%)'*'[3/7] Bun (0%)'*'[3/7] Bun (100%)'*'[4/7] Oh My Zsh (0%)'*'[4/7] Oh My Zsh (100%)'*'[5/7] Set Zsh as default shell (0%)'*'[5/7] Set Zsh as default shell (100%)'*'[6/7] PHPVM (0%)'*'[6/7] PHPVM (100%)'*'[7/7] Composer (0%)'*'[7/7] Composer (100%)'*'Package setup complete.'*) ;;
+  *'📦 [1/7] System packages (pacman)'*'📦 [2/7] Aikido Safe Chain'*'📦 [3/7] Bun'*'📦 [4/7] Oh My Zsh'*'📦 [5/7] Set Zsh as default shell'*'📦 [6/7] PHPVM'*'📦 [7/7] Composer'*'Package setup complete.'*) ;;
   *) printf 'package installer omitted a setup step\n' >&2; exit 1 ;;
+esac
+for expected_step in '[1/7] System packages (pacman)' '[2/7] Aikido Safe Chain' '[3/7] Bun' '[4/7] Oh My Zsh' '[5/7] Set Zsh as default shell' '[6/7] PHPVM' '[7/7] Composer'; do
+  occurrences=$(printf '%s\n' "$output" | grep -F -c "$expected_step" || :)
+  [ "$occurrences" -eq 1 ] || {
+    printf 'package installer printed a step %s times: %s\n' "$occurrences" "$expected_step" >&2
+    exit 1
+  }
+done
+case "$output" in
+  *'(0%)'*|*'(100%)'*) printf 'package installer still prints percentage markers\n' >&2; exit 1 ;;
 esac
 [ "$(cat "$SHELL_TEST_LOG")" = "-s $tmp_home/mock-bin/zsh $(id -un)" ]
 [ "$(sed -n '1p' "$tmp_home/phpvm-package.log")" = 'install latest-remote' ]
@@ -227,7 +237,7 @@ if output=$(PATH="$apt_mock_bin" HOME="$tmp_home" BUN_INSTALL="$tmp_home/.bun" \
   exit 1
 fi
 case "$output" in
-  *'❌ [1/7] Failed: System packages (apt-get)'*) ;;
+  *'📦 [1/7] System packages (apt-get)'*'❌ Step failed (exit status 42).'*) ;;
   *) printf 'package installer did not report a failed apt-get update\n' >&2; exit 1 ;;
 esac
 [ ! -e "$tmp_home/apt-fail.log" ]

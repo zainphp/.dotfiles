@@ -8,7 +8,6 @@ total_steps=7
 
 if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
   blue=$(printf '\033[34m')
-  green=$(printf '\033[32m')
   red=$(printf '\033[31m')
   reset=$(printf '\033[0m')
 else
@@ -23,14 +22,12 @@ run_step() {
   shift
   step=$((step + 1))
 
-  printf '%s📦 [%s/%s] %s (0%%)%s\n' "$blue" "$step" "$total_steps" "$label" "$reset"
-  if "$@" >/dev/null; then
-    printf '%s✅ [%s/%s] %s (100%%)%s\n' "$green" "$step" "$total_steps" "$label" "$reset"
-  else
+  printf '%s📦 [%s/%s] %s%s\n' "$blue" "$step" "$total_steps" "$label" "$reset"
+  "$@" >/dev/null || {
     status=$?
-    printf '%s❌ [%s/%s] Failed: %s%s\n' "$red" "$step" "$total_steps" "$label" "$reset" >&2
+    printf '%s❌ Step failed (exit status %s).%s\n' "$red" "$status" "$reset" >&2
     return "$status"
-  fi
+  }
 }
 
 as_root() {
