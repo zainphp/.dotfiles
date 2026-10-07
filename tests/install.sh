@@ -39,6 +39,10 @@ cat > "$tmp_home/mock-bin/sudo" <<'EOF'
 #!/bin/sh
 exec "$@"
 EOF
+cat > "$tmp_home/mock-bin/apt-get" <<'EOF'
+#!/bin/sh
+exit 0
+EOF
 cat > "$tmp_home/mock-bin/chsh" <<'EOF'
 #!/bin/sh
 printf '%s\n' "$*" >> "$SHELL_TEST_LOG"
@@ -113,7 +117,7 @@ cat > "$tmp_home/mock-bin/sqlite3" <<'EOF'
 #!/bin/sh
 printf '3.53.4 2025-06-30 14:12:18\n'
 EOF
-chmod +x "$tmp_home/mock-bin/pacman" "$tmp_home/mock-bin/sudo" "$tmp_home/mock-bin/chsh" \
+chmod +x "$tmp_home/mock-bin/pacman" "$tmp_home/mock-bin/sudo" "$tmp_home/mock-bin/apt-get" "$tmp_home/mock-bin/chsh" \
   "$tmp_home/mock-bin/safe-chain" "$tmp_home/mock-bin/bun" \
   "$tmp_home/mock-bin/php" "$tmp_home/mock-bin/sed" \
   "$tmp_home/.bun/bin/bun" "$tmp_home/.local/bin/composer" \
@@ -380,17 +384,24 @@ cat > "$phpvm_mock_bin/sudo" <<'EOF'
 #!/bin/sh
 exec "$@"
 EOF
+cat > "$phpvm_mock_bin/apt-get" <<'EOF'
+#!/bin/sh
+exit 0
+EOF
 cat > "$phpvm_mock_bin/sed" <<'EOF'
 #!/bin/sh
 printf '%s\n' "$*" >> "$PHP_INI_TEST_LOG"
 EOF
 cat > "$phpvm_mock_bin/php" <<'EOF'
 #!/bin/sh
-[ "$1" = '-m' ] || exit 1
-  printf '%s\n' ctype curl dom fileinfo filter hash mbstring openssl pcre PDO session tokenizer xml pdo_mysql pdo_sqlite sqlite3
+case "${1:-}" in
+  -r) printf '8.5\n'; exit 0 ;;
+  -m) printf '%s\n' ctype curl dom fileinfo filter hash mbstring openssl pcre PDO session tokenizer xml pdo_mysql pdo_sqlite sqlite3 ;;
+  *) exit 1 ;;
+esac
 EOF
 chmod +x "$phpvm_mock_bin/curl" "$phpvm_mock_bin/pacman" "$phpvm_mock_bin/sudo" \
-  "$phpvm_mock_bin/sed" "$phpvm_mock_bin/php"
+  "$phpvm_mock_bin/apt-get" "$phpvm_mock_bin/sed" "$phpvm_mock_bin/php"
 PATH="$phpvm_mock_bin:/usr/bin:/bin" HOME="$phpvm_home" PHPVM_DIR="$phpvm_home/.phpvm" \
   PHPVM_TEST_LOG="$phpvm_home/phpvm.log" PHP_INI_TEST_LOG="$phpvm_home/php-ini.log" \
   "$repo_dir/scripts/installers/phpvm.sh"
