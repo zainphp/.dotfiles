@@ -3,6 +3,7 @@ github-cli
 git
 nano
 openssh
+php-sqlite
 python
 ripgrep
 sqlite

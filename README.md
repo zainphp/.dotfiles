@@ -22,7 +22,7 @@ Check packages after installation:
 
 The installer adds Git if needed, clones this repository or fast-forward updates an existing checkout, installs packages from the [Arch](packages/arch.txt) or [Debian/Ubuntu](packages/debian.txt) list, then replaces existing `~/.zshrc` and `~/.gitconfig` files with links into the repo. Package installation may prompt for `sudo`.
 
-The package installer installs Oh My Zsh and Bun, sets Zsh as the default login shell, then sets up PHPVM with its newest available PHP version before installing Composer. Open a new terminal session for the shell change to take effect. VS Code is preferred when `code` is available; otherwise the editor is Nano.
+The package installer installs Oh My Zsh and Bun, sets Zsh as the default login shell, then sets up PHPVM with its newest available PHP version and enables the Laravel PHP extensions, including SQLite and MySQL/MariaDB database support, before installing Composer. Open a new terminal session for the shell change to take effect. VS Code is preferred when `code` is available; otherwise the editor is Nano.
 
 GitHub authentication uses GitHub CLI (`gh auth login`). Keep credentials and private keys outside this repository.
 

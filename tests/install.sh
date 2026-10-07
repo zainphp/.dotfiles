@@ -86,7 +86,20 @@ EOF
 done
 cat > "$tmp_home/mock-bin/php" <<'EOF'
 #!/bin/sh
-printf 'PHP 8.5.0 (cli)\nCopyright details omitted\n'
+case "${1:-}" in
+  -m)
+    printf '%s\n' ctype curl dom fileinfo filter hash mbstring openssl pcre PDO session tokenizer xml pdo_mysql pdo_sqlite sqlite3
+    ;;
+  -r) printf '8.5\n' ;;
+  *) printf 'PHP 8.5.0 (cli)\nCopyright details omitted\n' ;;
+esac
+EOF
+cat > "$tmp_home/mock-bin/sed" <<'EOF'
+#!/bin/sh
+if [ "${1:-}" = '-i' ]; then
+  exit 0
+fi
+exec /usr/bin/sed "$@"
 EOF
 cat > "$tmp_home/mock-bin/btop" <<'EOF'
 #!/bin/sh
@@ -102,6 +115,7 @@ printf '3.53.4 2025-06-30 14:12:18\n'
 EOF
 chmod +x "$tmp_home/mock-bin/pacman" "$tmp_home/mock-bin/sudo" "$tmp_home/mock-bin/chsh" \
   "$tmp_home/mock-bin/safe-chain" "$tmp_home/mock-bin/bun" \
+  "$tmp_home/mock-bin/php" "$tmp_home/mock-bin/sed" \
   "$tmp_home/.bun/bin/bun" "$tmp_home/.local/bin/composer" \
   "$tmp_home/.phpvm/bin/phpvm" "$tmp_home/.config/composer/vendor/bin/laravel" \
   "$tmp_home/.bun/bin/sentry-mcp"
@@ -119,6 +133,10 @@ case "$(cat "$tmp_home/pacman.log")" in
   '-S --needed --noconfirm '*) ;;
   *) exit 1 ;;
 esac
+case "$(cat "$tmp_home/pacman.log")" in
+  *' php-sqlite'*) ;;
+  *) printf 'Arch package list omitted the PHP SQLite extension\n' >&2; exit 1 ;;
+esac
 if output=$(PATH="$tmp_home/mock-bin:$PATH" HOME="$tmp_home" BUN_INSTALL="$tmp_home/.bun" \
   "$repo_dir/scripts/check-packages.sh" 2>&1); then
   printf 'package checker did not report a missing Arch package\n' >&2
@@ -132,6 +150,7 @@ esac
 apt_mock_bin="$tmp_home/apt-mock-bin"
 mkdir -p "$apt_mock_bin"
 ln -s "$(command -v dirname)" "$apt_mock_bin/dirname"
+ln -s "$(command -v grep)" "$apt_mock_bin/grep"
 ln -s "$(command -v sed)" "$apt_mock_bin/sed"
 cat > "$apt_mock_bin/id" <<'EOF'
 #!/bin/sh
@@ -186,6 +205,20 @@ case " $(sed -n '2p' "$tmp_home/apt.log") " in
   *' sqlite3 '*) ;;
   *) printf 'Debian package list was not passed to apt-get\n' >&2; exit 1 ;;
 esac
+apt_packages=$(sed -n '2p' "$tmp_home/apt.log")
+case " $apt_packages " in
+  *' php-curl '*|*' php-mbstring '*|*' php-mysql '*|*' php-sqlite3 '*|*' php-xml '*)
+    printf 'Debian extension packages were installed before PHPVM selected PHP\n' >&2
+    exit 1
+    ;;
+esac
+php_extension_packages=$(sed -n '3p' "$tmp_home/apt.log")
+for package in php8.5-curl php8.5-mbstring php8.5-mysql php8.5-sqlite3 php8.5-xml; do
+  case " $php_extension_packages " in
+    *" $package "*) ;;
+    *) printf 'PHPVM did not install the selected version extension %s\n' "$package" >&2; exit 1 ;;
+  esac
+done
 [ "$(sed -n '2p' "$SHELL_TEST_LOG")" = "-s $apt_mock_bin/zsh testuser" ]
 if output=$(PATH="$apt_mock_bin" HOME="$tmp_home" BUN_INSTALL="$tmp_home/.bun" \
   APT_FAIL_UPDATE=yes PACKAGE_TEST_LOG="$tmp_home/apt-fail.log" \
@@ -329,12 +362,35 @@ chmod +x "$PHPVM_DIR/bin/phpvm"
 printf 'upstream profile change\n' >> "$PROFILE"
 INSTALLER
 EOF
-chmod +x "$phpvm_mock_bin/curl"
+cat > "$phpvm_mock_bin/pacman" <<'EOF'
+#!/bin/sh
+exit 0
+EOF
+cat > "$phpvm_mock_bin/sudo" <<'EOF'
+#!/bin/sh
+exec "$@"
+EOF
+cat > "$phpvm_mock_bin/sed" <<'EOF'
+#!/bin/sh
+printf '%s\n' "$*" >> "$PHP_INI_TEST_LOG"
+EOF
+cat > "$phpvm_mock_bin/php" <<'EOF'
+#!/bin/sh
+[ "$1" = '-m' ] || exit 1
+  printf '%s\n' ctype curl dom fileinfo filter hash mbstring openssl pcre PDO session tokenizer xml pdo_mysql pdo_sqlite sqlite3
+EOF
+chmod +x "$phpvm_mock_bin/curl" "$phpvm_mock_bin/pacman" "$phpvm_mock_bin/sudo" \
+  "$phpvm_mock_bin/sed" "$phpvm_mock_bin/php"
 PATH="$phpvm_mock_bin:/usr/bin:/bin" HOME="$phpvm_home" PHPVM_DIR="$phpvm_home/.phpvm" \
-  PHPVM_TEST_LOG="$phpvm_home/phpvm.log" "$repo_dir/scripts/installers/phpvm.sh"
+  PHPVM_TEST_LOG="$phpvm_home/phpvm.log" PHP_INI_TEST_LOG="$phpvm_home/php-ini.log" \
+  "$repo_dir/scripts/installers/phpvm.sh"
 [ "$(cat "$phpvm_home/.zshrc")" = 'keep this zsh config' ]
 [ "$(sed -n '1p' "$phpvm_home/phpvm.log")" = 'install latest-remote' ]
 [ "$(sed -n '2p' "$phpvm_home/phpvm.log")" = 'use latest' ]
+case "$(cat "$phpvm_home/php-ini.log")" in
+  *'extension=pdo_mysql'*'extension=pdo_sqlite'*'extension=sqlite3'*/etc/php/php.ini*) ;;
+  *) printf 'PHPVM installer did not enable Arch Laravel database extensions\n' >&2; exit 1 ;;
+esac
 
 # Installer downloads work when only wget is available.
 download_bin="$tmp_home/download-bin"
