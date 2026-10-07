@@ -111,7 +111,17 @@ fi
 
 if ! env HOME="$tmp_home" SSH_ADD_KEY_FILE="$repo_dir/zsh/helpers/ssh-add-key.zsh" \
   ALIASES_FILE="$repo_dir/zsh/aliases.zsh" \
-  zsh -f -i -c 'source "$ALIASES_FILE"; source "$SSH_ADD_KEY_FILE"; [[ ${_comps[ssh-add-key]} == _ssh-add-key && ${_comps[sshak]} == _ssh-add-key ]]' \
+  zsh -f -i -c '
+    typeset -gA _comps
+    compdef() {
+      local completion=$1 name
+      shift
+      for name in "$@"; do _comps[$name]=$completion; done
+    }
+    source "$ALIASES_FILE"
+    source "$SSH_ADD_KEY_FILE"
+    [[ ${_comps[ssh-add-key]} == _ssh-add-key && ${_comps[sshak]} == _ssh-add-key ]]
+  ' \
   </dev/null >/dev/null 2>&1; then
   print -u2 'ssh-add-key or sshak completion was not registered'
   exit 1
