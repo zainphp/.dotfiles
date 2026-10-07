@@ -1,0 +1,12 @@
+name: Moat Audit
+
+on:
+  workflow_dispatch: # Allows manual trigger
+  schedule:
+    - cron: '0 0 * * 1' # Every Monday
+
+jobs:
+  moat-audit:
+    uses: zainphp/moat-audit/.github/workflows/moat-audit.yml@main
+    with:
+      fail_on_findings: true
