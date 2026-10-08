@@ -49,4 +49,36 @@ env -u DOTFILES_BACKUP_DIR HOME="$default_home" \
   "$default_repo/scripts/restore.sh" --yes >/dev/null
 [[ $(<"$default_home/projects/demo/data") == 'project data' ]]
 
+# Simulate sudo without touching real users or their home directories.
+mock_bin="$tmp_root/bin"
+sudo_home="$tmp_root/sudo-home"
+root_home="$tmp_root/root-home"
+mkdir -p "$mock_bin" "$sudo_home" "$root_home"
+cat > "$mock_bin/id" <<'EOF'
+#!/bin/sh
+printf '%s\n' "${MOCK_UID:-1000}"
+EOF
+cat > "$mock_bin/getent" <<'EOF'
+#!/bin/sh
+[ "$1" = passwd ] && [ "$2" = testuser ] || exit 1
+printf 'testuser:x:1000:1000::%s:/bin/bash\n' "$TEST_USER_HOME"
+EOF
+cat > "$mock_bin/sudo" <<'EOF'
+#!/bin/sh
+[ "$1" = -u ] && [ "$2" = testuser ] && [ "$3" = -- ] || exit 1
+shift 3
+unset MOCK_UID SUDO_USER
+exec "$@"
+EOF
+chmod +x "$mock_bin"/*
+PATH="$mock_bin:$PATH" MOCK_UID=0 SUDO_USER=testuser \
+  TEST_USER_HOME="$sudo_home" HOME="$root_home" \
+  "$repo_dir/scripts/restore.sh" "$archive" --yes > "$tmp_root/output"
+[[ $(<"$sudo_home/projects/demo/data") == 'project data' ]]
+[[ ! -e "$root_home/projects" ]]
+grep -q 'Checking archive' "$tmp_root/output"
+grep -q 'Restoring files' "$tmp_root/output"
+grep -Fq "Restore completed: $sudo_home" "$tmp_root/output"
+[[ $(<"$tmp_root/output") != *$'\033'* ]]
+
 printf 'restore checks passed\n'
