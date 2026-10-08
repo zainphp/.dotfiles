@@ -4,6 +4,19 @@ set -euo pipefail
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
 repo_dir=$(cd -- "$script_dir/.." && pwd -P)
 backup_dir=${DOTFILES_BACKUP_DIR:-$repo_dir/backups}
+if [[ $(id -u) == 0 && -n ${SUDO_USER:-} && $SUDO_USER != root ]]; then
+  passwd_entry=$(getent passwd "$SUDO_USER")
+  IFS=: read -r _ _ _ _ _ caller_home _ <<< "$passwd_entry"
+  exec sudo -u "$SUDO_USER" -- env HOME="$caller_home" \
+    DOTFILES_BACKUP_DIR="$backup_dir" bash "$script_dir/restore.sh" "$@"
+fi
+
+blue= green= red= reset=
+if [[ -t 1 && -z ${NO_COLOR:-} ]]; then
+  blue=$'\033[34m' green=$'\033[32m' red=$'\033[31m' reset=$'\033[0m'
+fi
+trap 'printf "%s❌ Restore failed. Check the error above.%s\n" "$red" "$reset" >&2' ERR
+
 archive=
 assume_yes=0
 
@@ -55,10 +68,12 @@ if [[ ! -f $archive ]]; then
 fi
 archive_dir=$(cd -- "$(dirname -- "$archive")" && pwd -P)
 archive="$archive_dir/$(basename -- "$archive")"
-if ! tar -tzf "$archive" >/dev/null; then
+printf '%s📦 Checking archive (dots indicate progress)…%s\n' "$blue" "$reset"
+if ! tar --checkpoint=1024 --checkpoint-action=dot -tzf "$archive" >/dev/null; then
   printf 'Could not read backup archive: %s\n' "$archive" >&2
   exit 1
 fi
+printf '\n'
 
 home_dir=$(cd -- "$HOME" && pwd -P)
 printf 'Archive: %s\nRestore to: %s\n' "$archive" "$home_dir"
@@ -74,5 +89,6 @@ if (( ! assume_yes )); then
   esac
 fi
 
-tar --no-same-owner -xzf "$archive" -C "$home_dir"
-printf 'Restore completed.\n'
+printf '%s📂 Restoring files (dots indicate progress)…%s\n' "$blue" "$reset"
+tar --no-same-owner --checkpoint=1024 --checkpoint-action=dot -xzf "$archive" -C "$home_dir"
+printf '\n%s✅ Restore completed: %s%s\n' "$green" "$home_dir" "$reset"
