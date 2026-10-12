@@ -32,6 +32,7 @@ export VISUAL="$EDITOR"
 # Resolve this file's directory even when ~/.zshrc is a symlink.
 dotfiles_dir="${${(%):-%x}:A:h}"
 [[ -r "$dotfiles_dir/zsh/paths.zsh" ]] && source "$dotfiles_dir/zsh/paths.zsh"
+# bun completions
 [[ -s "$BUN_INSTALL/_bun" ]] && source "$BUN_INSTALL/_bun"
 if [[ -s "$PHPVM_DIR/phpvm.sh" ]]; then
   # PHPVM uses Bash syntax; delegate commands instead of sourcing it into Zsh.
