@@ -34,6 +34,9 @@ printf 'auth token\n' > "$tmp_home/.codex/auth.json"
 printf 'installed package\n' > "$tmp_home/.codex/packages/package.json"
 printf 'installed plugin\n' > "$tmp_home/.codex/plugins/plugin.json"
 printf 'temporary data\n' > "$tmp_home/.codex/.tmp/data"
+mkdir -p "$tmp_home/.codex/app-server-daemon" "$tmp_home/.codex/app-server-control"
+printf 'old daemon log\n' > "$tmp_home/.codex/app-server-daemon/daemon.stderr.log"
+printf 'old control state\n' > "$tmp_home/.codex/app-server-control/app-server-startup.lock"
 
 project="$tmp_home/projects/demo"
 git -C "$project" init -q
@@ -113,7 +116,7 @@ if grep -Eq 'Estimated source size: ([1-9][0-9]{2,}M|[1-9][0-9]*G|[1-9][0-9]*T)'
 fi
 archive=${output#'Backup created: '}
 rm "$tmp_home/projects/progress.bin"
-if tar -tzf "$archive" | grep -Eq '^\.codex/(auth\.json|packages(/|$)|plugins(/|$)|\.tmp(/|$))'; then
+if tar -tzf "$archive" | grep -Eq '^\.codex/(auth\.json|packages(/|$)|plugins(/|$)|\.tmp(/|$)|app-server-daemon(/|$)|app-server-control(/|$))'; then
   printf 'backup archive included excluded Codex files\n' >&2
   exit 1
 fi

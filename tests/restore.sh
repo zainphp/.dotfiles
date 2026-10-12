@@ -16,6 +16,12 @@ mkdir -p "$source_home/.ssh" "$source_home/projects/demo" \
 printf 'private key\n' > "$source_home/.ssh/id_test"
 printf 'project data\n' > "$source_home/projects/demo/data"
 printf 'memory\n' > "$source_home/.codex/memories/MEMORY.md"
+mkdir -p "$source_home/.codex/app-server-daemon" "$source_home/.codex/app-server-control" \
+  "$restore_home/.codex/app-server-daemon"
+printf 'old daemon log\n' > "$source_home/.codex/app-server-daemon/daemon.stderr.log"
+printf 'old settings\n' > "$source_home/.codex/app-server-daemon/settings.json"
+printf 'old control state\n' > "$source_home/.codex/app-server-control/app-server-startup.lock"
+printf 'current settings\n' > "$restore_home/.codex/app-server-daemon/settings.json"
 printf 'local config\n' > "$source_home/dotfiles/.zshrc.local"
 printf 'shell history\n' > "$source_home/.zsh_history"
 printf 'existing project data\n' > "$restore_home/projects/demo/data"
@@ -37,6 +43,9 @@ HOME="$restore_home" DOTFILES_BACKUP_DIR="$backup_dir" \
 [[ $(<"$restore_home/.ssh/id_test") == 'private key' ]]
 [[ $(<"$restore_home/projects/demo/data") == 'project data' ]]
 [[ $(<"$restore_home/.codex/memories/MEMORY.md") == 'memory' ]]
+[[ ! -e "$restore_home/.codex/app-server-daemon/daemon.stderr.log" ]]
+[[ ! -e "$restore_home/.codex/app-server-control" ]]
+[[ $(<"$restore_home/.codex/app-server-daemon/settings.json") == 'current settings' ]]
 [[ $(<"$restore_home/dotfiles/.zshrc.local") == 'local config' ]]
 [[ $(<"$restore_home/.zsh_history") == 'shell history' ]]
 
@@ -48,6 +57,8 @@ cp "$archive" "$default_repo/backups/"
 env -u DOTFILES_BACKUP_DIR HOME="$default_home" \
   "$default_repo/scripts/restore.sh" --yes >/dev/null
 [[ $(<"$default_home/projects/demo/data") == 'project data' ]]
+[[ ! -e "$default_home/.codex/app-server-daemon" ]]
+[[ ! -e "$default_home/.codex/app-server-control" ]]
 
 # Simulate sudo without touching real users or their home directories.
 mock_bin="$tmp_root/bin"

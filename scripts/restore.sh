@@ -90,5 +90,8 @@ if (( ! assume_yes )); then
 fi
 
 printf '%s📂 Restoring files (dots indicate progress)…%s\n' "$blue" "$reset"
-tar --no-same-owner --checkpoint=1024 --checkpoint-action=dot -xzf "$archive" -C "$home_dir"
+# Older archives contain daemon state without its executable package.
+tar --no-same-owner --checkpoint=1024 --checkpoint-action=dot \
+  --exclude=.codex/app-server-daemon --exclude=.codex/app-server-control \
+  -xzf "$archive" -C "$home_dir"
 printf '\n%s✅ Restore completed: %s%s\n' "$green" "$home_dir" "$reset"

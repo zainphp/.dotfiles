@@ -65,6 +65,9 @@ backup_excludes=(
 
   # Reinstallable Codex data and credentials that can be recreated by signing in.
   '--exclude=.codex/packages'
+  # Daemon logs and PID records imply an installation whose package is excluded.
+  '--exclude=.codex/app-server-daemon'
+  '--exclude=.codex/app-server-control'
   '--exclude=.codex/plugins'
   '--exclude=.codex/.tmp'
   '--exclude=.codex/auth.json'
