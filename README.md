@@ -36,7 +36,7 @@ In a trusted project, run `project-path` from its root to add existing `node_mod
 
 ### Shell and editors
 
-- [Zsh](https://zsh.sourceforge.io/) with [Oh My Zsh](https://ohmyz.sh/) `git`, `gh`, and `bun` plugins plus [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions).
+- [Zsh](https://zsh.sourceforge.io/) with [Oh My Zsh](https://ohmyz.sh/) `git` and `gh` plugins plus [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions). Bun completions load from `~/.bun/_bun`; generate or refresh them with `SHELL=zsh bun completions > ~/.bun/_bun`. The Oh My Zsh Bun plugin is omitted because its background generator can reset the first prompt's terminal input mode when Bun runs through Safe Chain.
 - [Visual Studio Code](https://code.visualstudio.com/docs) and [Nano](https://www.nano-editor.org/docs.php).
 
 ### AI and agent tools

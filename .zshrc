@@ -2,7 +2,8 @@
 export ZSH="${ZSH:-$HOME/.oh-my-zsh}"
 export ZSH_CUSTOM="${ZSH_CUSTOM:-$ZSH/custom}"
 ZSH_THEME="robbyrussell"
-plugins=(git gh bun)
+# The Bun plugin's background generator can reset the active prompt's terminal mode.
+plugins=(git gh)
 if [[ -s "$ZSH_CUSTOM/plugins/zsh-autosuggestions/zsh-autosuggestions.plugin.zsh" && -s "$ZSH/oh-my-zsh.sh" ]]; then
   plugins+=(zsh-autosuggestions)
 fi
