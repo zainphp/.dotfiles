@@ -9,5 +9,6 @@ if [ "$#" -gt 0 ]; then
   exit 2
 fi
 
+ln -sfT "$repo_dir/.zshenv" "$HOME/.zshenv"
 ln -sfT "$repo_dir/.zshrc" "$HOME/.zshrc"
 ln -sfT "$repo_dir/.gitconfig" "$HOME/.gitconfig"
