@@ -16,6 +16,7 @@ printf 'old zsh config\n' > "$tmp_home/.zshrc"
 printf 'old git config\n' > "$tmp_home/.gitconfig"
 HOME="$tmp_home" "$repo_dir/scripts/symlink-dotfiles.sh"
 
+[ "$(readlink "$tmp_home/.zshenv")" = "$repo_dir/.zshenv" ]
 [ "$(readlink "$tmp_home/.zshrc")" = "$repo_dir/.zshrc" ]
 [ "$(readlink "$tmp_home/.gitconfig")" = "$repo_dir/.gitconfig" ]
 set -- "$tmp_home"/.dotfiles-backup.*
